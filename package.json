@@ -1,0 +1,19 @@
+{
+  "name": "jalas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/m.nourbakhsh75/jalas.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/m.nourbakhsh75/jalas/issues"
+  },
+  "homepage": "https://gitlab.com/m.nourbakhsh75/jalas#readme"
+}
