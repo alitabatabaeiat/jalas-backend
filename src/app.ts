@@ -1,10 +1,13 @@
 import * as express from 'express';
 import * as cors from 'cors';
+import Controller from "./controllers/controller";
+import notFoundMiddleware from "./middlewares/notFound";
+import errorMiddleware from "./middlewares/error";
 
 class App {
     private app: express.Application;
 
-    constructor(controllers) {
+    constructor(controllers: Controller[]) {
         this.app = express();
 
         this.initializeMiddleware();
@@ -18,11 +21,13 @@ class App {
         this.app.use(express.urlencoded({extended: false}));
     }
 
-    private initializeControllers(controllers) {
+    private initializeControllers(controllers: Controller[]) {
         controllers.forEach(controller => this.app.use('/api/v1', controller.router));
     }
 
     private initializeErrorHandling() {
+        this.app.use(notFoundMiddleware);
+        this.app.use(errorMiddleware);
     }
 
     public listen() {
