@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import 'reflect-metadata';
 import {createConnection} from "typeorm";
-import * as Joi from '@hapi/joi';
 
 import App from "./app";
 import config from "./ormconfig";
@@ -9,7 +8,7 @@ import envSchema from "./validations/env";
 
 (async () => {
     try {
-        const {error} = Joi.validate(process.env, envSchema, {allowUnknown: true});
+        const {error} = envSchema.validate(process.env, {allowUnknown: true});
         if (error) {
             console.error(error.details);
             process.exit(1);
