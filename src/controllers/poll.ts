@@ -20,8 +20,7 @@ export default class PollController extends Controller {
 
     private static createPoll = async (req: express.Request, res: express.Response) => {
         const {user, body} = req;
-        body.userId = user.id;
-        const poll = await PollService.getInstance().createPoll(body);
+        const poll = await PollService.getInstance().createPoll(user.id, body);
         res.status(201).send(poll);
     };
 }
