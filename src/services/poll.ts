@@ -1,13 +1,14 @@
-import {EntityManager, getRepository, Repository} from "typeorm";
+import {EntityManager, getCustomRepository, getRepository, Repository} from "typeorm";
 import Poll from "../entities/poll";
 import HttpException from "../exceptions/httpException";
+import {PollRepository} from "../repositories/poll";
 
 export default class PollService {
     private static service: PollService;
-    protected repository: Repository<Poll>;
+    protected repository: PollRepository;
 
     private constructor() {
-        this.repository = getRepository(Poll);
+        this.repository = getCustomRepository(PollRepository);
     };
 
     public static getInstance() {
