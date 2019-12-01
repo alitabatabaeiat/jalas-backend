@@ -1,6 +1,6 @@
 import {CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
 
-class BaseEntity {
+export default class Base {
     @PrimaryGeneratedColumn('uuid')
     public id?: string;
 
@@ -10,5 +10,3 @@ class BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 }
-
-export default BaseEntity;
