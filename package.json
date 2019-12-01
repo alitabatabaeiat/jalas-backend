@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "ts-node ./src/server.ts",
+    "watch": "nodemon -e ts -w ./src -x npm run watch:serve",
+    "watch:serve": "node --inspect -r ts-node/register src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -15,5 +18,16 @@
   "bugs": {
     "url": "https://gitlab.com/m.nourbakhsh75/jalas/issues"
   },
-  "homepage": "https://gitlab.com/m.nourbakhsh75/jalas#readme"
+  "homepage": "https://gitlab.com/m.nourbakhsh75/jalas#readme",
+  "dependencies": {
+    "@hapi/joi": "^16.1.8",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "pg": "^7.14.0",
+    "reflect-metadata": "^0.1.13",
+    "ts-node": "^8.5.2",
+    "typeorm": "^0.2.20",
+    "typescript": "^3.7.2"
+  }
 }
