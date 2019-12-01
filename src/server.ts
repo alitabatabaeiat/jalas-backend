@@ -5,6 +5,7 @@ import {createConnection} from "typeorm";
 import App from "./app";
 import config from "./ormconfig";
 import envSchema from "./validations/env";
+import PollController from "./controllers/poll";
 
 (async () => {
     try {
@@ -14,7 +15,9 @@ import envSchema from "./validations/env";
             process.exit(1);
         }
         await createConnection(config);
-        const controllers = [];
+        const controllers = [
+            new PollController()
+        ];
         const app = new App(controllers);
         app.listen();
     } catch (error) {
