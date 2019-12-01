@@ -1,0 +1,29 @@
+version: "3"
+services:
+  postgres:
+    container_name: postgres-finance
+    build: .
+    ports:
+      - "2000:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    env_file:
+      - docker.env
+
+  pgadmin:
+    links:
+      - postgres:postgres
+    container_name: pgadmin-finance
+    image: dpage/pgadmin4
+    ports:
+      - "2001:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    env_file:
+      - docker.env
+
+volumes:
+  pg-data:
+    driver: local
+  pgadmin-data:
+    driver: local
