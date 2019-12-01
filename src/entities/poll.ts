@@ -14,7 +14,7 @@ export default class Poll extends BaseEntity {
     @Column('smallint', {default: 0})
     public state: number;
 
-    @Column('timestamp with time zone', {name: 'room_requested_at'})
+    @Column('timestamp with time zone', {name: 'room_requested_at', nullable: true})
     public roomRequestedAt: Date;
 
     @OneToMany(type => MeetingTime, meetingTime => meetingTime.poll)

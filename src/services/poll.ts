@@ -1,7 +1,7 @@
-import {EntityManager, getCustomRepository, getRepository, Repository} from "typeorm";
-import Poll from "../entities/poll";
-import HttpException from "../exceptions/httpException";
+import {EntityManager, getCustomRepository, getManager} from "typeorm";
 import {PollRepository} from "../repositories/poll";
+import Poll from "../entities/poll";
+import MeetingTime from "../entities/meetingTime";
 
 export default class PollService {
     private static service: PollService;
@@ -19,7 +19,14 @@ export default class PollService {
 
     private static _getInstance = () : PollService => new PollService();
 
-    public createPoll = async (poll, entityManager: EntityManager) => {
-
+    public createPoll = async (poll, entityManager?: EntityManager) => {
+        const newPoll = new Poll();
+        newPoll.title = poll.title;
+        newPoll.owner = poll.userId;
+        let pollInsertResult;
+        getManager().transaction(async (manager: EntityManager) => {
+            pollInsertResult = await this.repository.insert(newPoll);
+        });
+        return pollInsertResult
     }
 }

@@ -2,6 +2,8 @@ import * as express from 'express';
 
 import Controller from './controller';
 import PollService from '../services/poll';
+import validationMiddleware from "../middlewares/validation";
+import {createPollSchema} from "../validations/poll";
 
 export default class PollController extends Controller {
     constructor() {
@@ -12,13 +14,14 @@ export default class PollController extends Controller {
         this.routerMatches = [{
             method: 'POST',
             path: '/',
-            handlers: [PollController.createPoll]
+            handlers: [validationMiddleware(createPollSchema), PollController.createPoll]
         }];
     };
 
     private static createPoll = async (req: express.Request, res: express.Response) => {
-        const {user} = req;
-        const poll = await PollService.getInstance().createPoll(user.id);
+        const {user, body} = req;
+        body.userId = user.id;
+        const poll = await PollService.getInstance().createPoll(body);
         res.status(201).send(poll);
     };
 }

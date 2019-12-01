@@ -5,7 +5,4 @@ import Base from "./base";
 export default class User extends Base {
     @Column({length: 30, unique: true})
     public email: string;
-
-    @Column()
-    public password: string;
 }
