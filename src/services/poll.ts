@@ -19,6 +19,7 @@ export default class PollService {
 
     private static _getInstance = () : PollService => new PollService();
 
-    public createPoll = async (poll, entityManager: EntityManager = this.repository.manager) => {
+    public createPoll = async (poll, entityManager: EntityManager) => {
+
     }
 }
