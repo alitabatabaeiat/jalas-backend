@@ -1,8 +1,8 @@
 import {Column, Entity} from "typeorm";
-import BaseEntity from "./base";
+import Base from "./base";
 
 @Entity('users')
-export default class User extends BaseEntity {
+export default class User extends Base {
     @Column({length: 30, unique: true})
     public email: string;
 
