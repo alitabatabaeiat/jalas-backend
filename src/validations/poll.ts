@@ -35,4 +35,8 @@ const updateVotesSchema = Joi.object({
     ).min(1).required(),
 });
 
-export {createPollSchema, updateVotesSchema};
+const reserveRoomSchema = Joi.object({
+    room: rules.room.required()
+});
+
+export {createPollSchema, updateVotesSchema, reserveRoomSchema};

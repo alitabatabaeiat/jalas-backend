@@ -75,6 +75,58 @@ export default class PollService {
         throw error;
     };
 
+    public reserveRoom = async (user, pollId, {room}) => {
+        let error, meetingTime;
+        try {
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            if (poll && poll.state === 1) {
+                meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
+                const result = await ReservationsService.getInstance().reserveRoom(room, user,
+                    moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
+                    moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
+                );
+                await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
+                return result.data;
+            } else if (poll.state !== 1)
+                error = new HttpException(401, 'Cannot reserve room for this poll');
+            else error = new ResourceNotFoundException('Poll');
+        } catch (ex) {
+            if (ex instanceof HttpException) {
+                // Reservation service unavailable
+                if (ex.status === 503) {
+                    await this.repository.update(pollId, {state: 2, room, roomRequestedAt: moment().toISOString()});
+                    let interval = setInterval(async () => {
+                        console.log('-----------------', moment().toISOString());
+                        let status;
+                        try {
+                            const result = await ReservationsService.getInstance().reserveRoom(room, user,
+                                moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
+                                moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
+                            );
+                            status = 200;
+                        } catch (ex) {
+                            status = ex.status;
+                        }
+                        if (interval) {
+                            if (status === 200) {
+                                await this.repository.update(pollId, {state: 3});
+                                clearInterval(interval);
+                                interval = null;
+                            } else if (status === 400) {
+                                await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
+                                clearInterval(interval);
+                                interval = null;
+                            }
+                        }
+                    }, 1000);
+                }
+                throw ex;
+            }
+            throw new HttpException();
+        }
+        throw error;
+    };
+
     public createPoll = async (owner, poll) => {
         let newPoll = new Poll();
         newPoll.title = poll.title;

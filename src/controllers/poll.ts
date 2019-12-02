@@ -4,7 +4,7 @@ import Controller from './controller';
 import PollService from '../services/poll';
 import validationMiddleware from "../middlewares/validation";
 import authMiddleware from "../middlewares/auth";
-import {createPollSchema} from "../validations/poll";
+import {createPollSchema, reserveRoomSchema} from "../validations/poll";
 import {idSchema} from "../validations/common";
 
 export default class PollController extends Controller {
@@ -22,17 +22,24 @@ export default class PollController extends Controller {
             path: '/:id',
             handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.getPoll]
         }, {
-            method: 'GET',
-            path: '/:id/rooms',
-            handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.getAvailableRooms]
-        }, {
             method: 'POST',
             path: '/',
             handlers: [authMiddleware, validationMiddleware({body: createPollSchema}), PollController.createPoll]
         }, {
             method: 'PUT',
             path: '/:id',
-            handlers: [authMiddleware, validationMiddleware({params: idSchema(), body: idSchema('meetingTimeId')}), PollController.updatePoll]
+            handlers: [authMiddleware, validationMiddleware({
+                params: idSchema(),
+                body: idSchema('meetingTimeId')
+            }), PollController.updatePoll]
+        }, {
+            method: 'GET',
+            path: '/:id/rooms',
+            handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.getAvailableRooms]
+        }, {
+            method: 'POST',
+            path: '/:id/rooms',
+            handlers: [authMiddleware, validationMiddleware({params: idSchema(), body: reserveRoomSchema}), PollController.reserveRoom]
         }];
     };
 
@@ -51,6 +58,12 @@ export default class PollController extends Controller {
     private static getAvailableRooms = async (req: express.Request, res: express.Response) => {
         const {user, params} = req;
         const polls = await PollService.getInstance().getAvailableRooms(user.email, params.id);
+        res.send(polls);
+    };
+
+    private static reserveRoom = async (req: express.Request, res: express.Response) => {
+        const {user, params, body} = req;
+        const polls = await PollService.getInstance().reserveRoom(user.email, params.id, body);
         res.send(polls);
     };
 
