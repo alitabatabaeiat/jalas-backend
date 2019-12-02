@@ -1,5 +1,5 @@
 import {getCustomRepository} from "typeorm";
-import {PollRepository} from "../repositories/poll";
+import PollRepository from "../repositories/poll";
 import Poll from "../entities/poll";
 import MeetingTime from "../entities/meetingTime";
 import User from "../entities/user";

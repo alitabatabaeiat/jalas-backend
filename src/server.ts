@@ -6,6 +6,7 @@ import App from "./app";
 import config from "./ormconfig";
 import envSchema from "./validations/env";
 import PollController from "./controllers/poll";
+import AuthController from "./controllers/auth";
 
 (async () => {
     try {
@@ -16,6 +17,7 @@ import PollController from "./controllers/poll";
         }
         await createConnection(config);
         const controllers = [
+            new AuthController(),
             new PollController()
         ];
         const app = new App(controllers);
