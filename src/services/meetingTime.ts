@@ -27,10 +27,21 @@ export default class MeetingTimeService {
             if (meetingTime) {
                 await entityManager.update(MeetingTime, meetingTimeId, {selected: true});
                 return meetingTime;
-            }
-            else error = new ResourceNotFoundException('MeetingTime');
+            } else error = new ResourceNotFoundException('MeetingTime');
         } catch (ex) {
             console.log(ex)
+            throw new HttpException();
+        }
+        throw error;
+    };
+
+    public getSelectedMeetingTime = async (pollId) => {
+        let error;
+        try {
+            let meetingTime = await this.repository.findOne({where: {poll: pollId, selected: true}, select: ['startsAt', 'endsAt']});
+            if (meetingTime) return meetingTime;
+            else error = new HttpException();
+        } catch (ex) {
             throw new HttpException();
         }
         throw error;

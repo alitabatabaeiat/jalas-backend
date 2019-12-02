@@ -22,6 +22,10 @@ export default class PollController extends Controller {
             path: '/:id',
             handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.getPoll]
         }, {
+            method: 'GET',
+            path: '/:id/rooms',
+            handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.getAvailableRooms]
+        }, {
             method: 'POST',
             path: '/',
             handlers: [authMiddleware, validationMiddleware({body: createPollSchema}), PollController.createPoll]
@@ -41,6 +45,12 @@ export default class PollController extends Controller {
     private static getPoll = async (req: express.Request, res: express.Response) => {
         const {user, params} = req;
         const polls = await PollService.getInstance().getPoll(user.email, params.id);
+        res.send(polls);
+    };
+
+    private static getAvailableRooms = async (req: express.Request, res: express.Response) => {
+        const {user, params} = req;
+        const polls = await PollService.getInstance().getAvailableRooms(user.email, params.id);
         res.send(polls);
     };
 

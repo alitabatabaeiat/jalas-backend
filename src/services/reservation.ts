@@ -17,9 +17,10 @@ export default class ReservationsService {
 
     public getAvailableRooms = async (start, end) => {
         try {
-            return await axios.get('http://213.233.176.40/available_rooms', {
+            const {data} =await axios.get('http://213.233.176.40/available_rooms', {
                 params: {start, end}
             });
+            return data;
         } catch (ex) {
             throw new HttpException(503, 'Reservation service unavailable')
         }

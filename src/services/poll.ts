@@ -49,6 +49,32 @@ export default class PollService {
         throw error;
     };
 
+    public getAvailableRooms = async (user, pollId) => {
+        let error;
+        try {
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            if (poll && poll.state === 1) {
+                const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
+                return await ReservationsService.getInstance().getAvailableRooms(
+                    moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
+                    moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
+                );
+            } else if (poll.state !== 1)
+                error = new HttpException(401, 'Cannot get rooms for this poll');
+            else error = new ResourceNotFoundException('Poll');
+        } catch (ex) {
+            if (ex instanceof HttpException) {
+                // Reservation service unavailable
+                if (ex.status === 503)
+                    return ex.message;
+                else
+                    throw ex;
+            }
+            throw new HttpException();
+        }
+        throw error;
+    };
+
     public createPoll = async (owner, poll) => {
         let newPoll = new Poll();
         newPoll.title = poll.title;
@@ -75,16 +101,15 @@ export default class PollService {
         try {
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             let meetingTime;
-            if (poll && poll.state === 0) {
+            if (poll && poll.state === 1) {
                 await this.repository.manager.transaction(async entityManager => {
-                   await entityManager.update(Poll, pollId, {state: 1});
-                   meetingTime = await MeetingTimeService.getInstance().selectMeetingTime(entityManager, pollId, meetingTimeId);
+                    await entityManager.update(Poll, pollId, {state: 1});
+                    meetingTime = await MeetingTimeService.getInstance().selectMeetingTime(entityManager, pollId, meetingTimeId);
                 });
-                const {data: {availableRooms}} = await ReservationsService.getInstance().getAvailableRooms(
+                return await ReservationsService.getInstance().getAvailableRooms(
                     moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
                     moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
                 );
-                return availableRooms;
             } else if (poll.state !== 0)
                 error = new HttpException(401, 'Meeting time selected before');
             else error = new ResourceNotFoundException('Poll');
