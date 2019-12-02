@@ -88,7 +88,7 @@ export default class PollService {
                 );
                 await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
                 this.sendRoomReservationUpdateMail(user, room, true);
-                return result.data;
+                return result;
             } else if (poll.state !== 1)
                 error = new HttpException(401, 'Cannot reserve room for this poll');
             else error = new ResourceNotFoundException('Poll');

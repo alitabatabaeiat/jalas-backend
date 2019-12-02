@@ -18,7 +18,8 @@ export default class ReservationsService {
     public getAvailableRooms = async (start, end) => {
         try {
             const {data} = await axios.get('http://213.233.176.40/available_rooms', {
-                params: {start, end}
+                params: {start, end},
+                timeout: 10000
             });
             return data;
         } catch (ex) {
@@ -33,7 +34,6 @@ export default class ReservationsService {
             }, {
                 timeout: 10000
             });
-            console.log('data', data);
             return data;
         } catch (ex) {
             if (ex.response && (ex.response.status === 400 || ex.response.status === 404))
