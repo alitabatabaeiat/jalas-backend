@@ -21,13 +21,13 @@ function validationMiddleware(validationSchema: any): express.RequestHandler {
                 return next(new ValidationException(mapErrors(errors)));
             next();
         } catch (ex) {
-            next(new HttpException())
+            next(new HttpException());
         }
     }
 }
 
 const validate = (value, schema) => {
-    const {error} = Joi.validate(value, schema, {
+    const {error} = schema.validate(value, {
         abortEarly: false,
         stripUnknown: true
     });
@@ -43,18 +43,23 @@ const mapErrors = (errors) => {
         if (!mappedErrors[key])
             mappedErrors[key] = {};
         // pick and then remove first element from detail.path
-        const path = detail.path.shift();
-
         if (detail.path.length > 0) {
-            if (!mappedErrors[key][path])
-                mappedErrors[key][path] = mapErrors([detail]);
-            else
-                Object.assign(mappedErrors[key][path], mapErrors([detail]));
+            const path = detail.path.shift();
+
+            if (detail.path.length > 0) {
+                if (!mappedErrors[key][path])
+                    mappedErrors[key] = mapErrors({[path]: [detail]});
+                else
+                    Object.assign(mappedErrors[key][path], mapErrors({[detail.path.shift()]: [detail]}));
+            } else
+                mappedErrors[key][path] = detail.message;
         } else
-            mappedErrors[key][path] = detail.message;
+            mappedErrors[key] = detail.message;
     };
-    errors.params.forEach(detail => mapDetail('params', detail));
-    errors.body.forEach(detail => mapDetail('body', detail));
+    Object.entries(errors).forEach(([key, value]) => {
+        if (Array.isArray(value) && value.length > 0)
+            value.forEach(detail => mapDetail(key, detail));
+    });
 
     return mappedErrors;
 };
