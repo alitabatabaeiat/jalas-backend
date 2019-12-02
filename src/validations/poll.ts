@@ -18,7 +18,10 @@ const rules = {
 const createPollSchema = Joi.object({
     title: rules.title.required(),
     possibleMeetingTimes: Joi.array().items(
-        Joi.object(rules.possibleMeetingTimes)
+        Joi.object({
+            startsAt: rules.possibleMeetingTimes.startsAt.required(),
+            endsAt: rules.possibleMeetingTimes.endsAt.required()
+        })
     ).min(1).required(),
     participants: rules.participants.required()
 });
