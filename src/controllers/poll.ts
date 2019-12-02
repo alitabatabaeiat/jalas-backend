@@ -14,6 +14,14 @@ export default class PollController extends Controller {
 
     protected initRouterMatches() {
         this.routerMatches = [{
+            method: 'GET',
+            path: '/',
+            handlers: [authMiddleware, PollController.getPolls]
+        }, {
+            method: 'GET',
+            path: '/:id',
+            handlers: [authMiddleware, validationMiddleware({params: idSchema}), PollController.getPoll]
+        }, {
             method: 'POST',
             path: '/',
             handlers: [authMiddleware, validationMiddleware({body: createPollSchema}), PollController.createPoll]
@@ -22,6 +30,18 @@ export default class PollController extends Controller {
             path: '/:id',
             handlers: [authMiddleware, validationMiddleware({params: idSchema, body: updateVotesSchema}), PollController.updatePoll]
         }];
+    };
+
+    private static getPolls = async (req: express.Request, res: express.Response) => {
+        const {user, body} = req;
+        const polls = await PollService.getInstance().getPolls(user.email);
+        res.send(polls);
+    };
+
+    private static getPoll = async (req: express.Request, res: express.Response) => {
+        const {user, params} = req;
+        const polls = await PollService.getInstance().getPoll(user.email, params.id);
+        res.send(polls);
     };
 
     private static createPoll = async (req: express.Request, res: express.Response) => {

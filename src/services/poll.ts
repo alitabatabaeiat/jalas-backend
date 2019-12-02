@@ -23,6 +23,30 @@ export default class PollService {
 
     private static _getInstance = (): PollService => new PollService();
 
+    public getPolls = async (user) => {
+        try {
+            return await this.repository.find({where: {owner: user}});
+        } catch (ex) {
+            throw new HttpException();
+        }
+    };
+
+    public getPoll = async (user, pollId) => {
+        let error;
+        try {
+            const poll = await this.repository.findOne({
+                where: {owner: user, id: pollId},
+                relations: ['possibleMeetingTimes', 'owner', 'participants']
+            });
+            console.log(poll)
+            if (poll) return poll;
+            else error = new ResourceNotFoundException('Poll');
+        } catch (ex) {
+            throw new HttpException();
+        }
+        throw error;
+    };
+
     public createPoll = async (owner, poll) => {
         let newPoll = new Poll();
         newPoll.title = poll.title;
@@ -57,8 +81,7 @@ export default class PollService {
                     return await MeetingTimeService.getInstance().updateVotes(pollId, updateVotes.possibleMeetingTimes);
                 else
                     error = new HttpException(403, 'sorry you cannot vote for this poll');
-            }
-            else
+            } else
                 error = new ResourceNotFoundException('Poll', 'id', pollId);
         } catch (ex) {
             throw new HttpException();
