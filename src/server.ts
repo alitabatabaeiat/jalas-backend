@@ -7,6 +7,7 @@ import config from "./ormconfig";
 import envSchema from "./validations/env";
 import PollController from "./controllers/poll";
 import AuthController from "./controllers/auth";
+import {sendMail} from "./utilities/mail";
 
 (async () => {
     try {

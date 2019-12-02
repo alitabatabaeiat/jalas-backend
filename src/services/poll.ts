@@ -8,6 +8,7 @@ import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 import HttpException from "../exceptions/httpException";
 import ReservationsService from "./reservation";
 import moment = require("moment");
+import {sendMail} from "../utilities/mail";
 
 export default class PollService {
     private static service: PollService;
@@ -86,6 +87,7 @@ export default class PollService {
                     moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
                 );
                 await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
+                this.sendRoomReservationUpdateMail(user, room, true);
                 return result.data;
             } else if (poll.state !== 1)
                 error = new HttpException(401, 'Cannot reserve room for this poll');
@@ -111,10 +113,12 @@ export default class PollService {
                                 await this.repository.update(pollId, {state: 3});
                                 clearInterval(interval);
                                 interval = null;
+                                this.sendRoomReservationUpdateMail(user, room, true);
                             } else if (status === 400) {
                                 await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
                                 clearInterval(interval);
                                 interval = null;
+                                this.sendRoomReservationUpdateMail(user, room, false);
                             }
                         }
                     }, 1000);
@@ -124,6 +128,15 @@ export default class PollService {
             throw new HttpException();
         }
         throw error;
+    };
+
+    private sendRoomReservationUpdateMail = (owner, room, successful) => {
+          sendMail({
+              from: `Ali Tabatabaei <${process.env.EMAIL_ADDRESS}>`,
+              to: owner,
+              subject: `Reservation state changed`,
+              text: `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`
+          });
     };
 
     public createPoll = async (owner, poll) => {
