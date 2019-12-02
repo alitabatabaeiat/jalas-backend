@@ -96,7 +96,6 @@ export default class PollService {
                 if (ex.status === 503) {
                     await this.repository.update(pollId, {state: 2, room, roomRequestedAt: moment().toISOString()});
                     let interval = setInterval(async () => {
-                        console.log('-----------------', moment().toISOString());
                         let status;
                         try {
                             const result = await ReservationsService.getInstance().reserveRoom(room, user,
@@ -173,6 +172,21 @@ export default class PollService {
                 else
                     throw ex;
             }
+            throw new HttpException();
+        }
+        throw error;
+    };
+
+    public removePoll = async (user, pollId) => {
+        let error;
+        try {
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            if (poll && poll.state < 3) {
+                return await this.repository.delete(pollId);
+            } else if (poll.state === 3)
+                error = new HttpException(400, 'Poll cannot be removed');
+            else error = new ResourceNotFoundException('Poll');
+        } catch (ex) {
             throw new HttpException();
         }
         throw error;

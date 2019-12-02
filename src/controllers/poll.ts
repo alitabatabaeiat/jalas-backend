@@ -33,13 +33,20 @@ export default class PollController extends Controller {
                 body: idSchema('meetingTimeId')
             }), PollController.updatePoll]
         }, {
+            method: 'DELETE',
+            path: '/:id',
+            handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.removePoll]
+        }, {
             method: 'GET',
             path: '/:id/rooms',
             handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.getAvailableRooms]
         }, {
             method: 'POST',
             path: '/:id/rooms',
-            handlers: [authMiddleware, validationMiddleware({params: idSchema(), body: reserveRoomSchema}), PollController.reserveRoom]
+            handlers: [authMiddleware, validationMiddleware({
+                params: idSchema(),
+                body: reserveRoomSchema
+            }), PollController.reserveRoom]
         }];
     };
 
@@ -77,5 +84,11 @@ export default class PollController extends Controller {
         const {user, params, body} = req;
         const response = await PollService.getInstance().selectMeetingTime(user.email, params.id, body);
         res.send(response);
+    }
+
+    private static removePoll = async (req: express.Request, res: express.Response) => {
+        const {user, params} = req;
+        const response = await PollService.getInstance().removePoll(user.email, params.id);
+        res.send('Poll removed successfully');
     }
 }
