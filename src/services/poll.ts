@@ -165,7 +165,7 @@ export default class PollService {
         try {
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             let meetingTime;
-            if (poll && poll.state === 1) {
+            if (poll && poll.state === 0) {
                 await this.repository.manager.transaction(async entityManager => {
                     await entityManager.update(Poll, pollId, {state: 1});
                     meetingTime = await MeetingTimeService.getInstance().selectMeetingTime(entityManager, pollId, meetingTimeId);
