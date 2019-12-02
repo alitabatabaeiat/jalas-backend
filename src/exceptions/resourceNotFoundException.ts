@@ -5,7 +5,7 @@ class ResourceNotFoundException extends HttpException {
         if (fieldName && fieldValue)
             super(404, `${resourceName} with ${fieldName}: ${fieldValue} not found`);
         else
-            super(404, resourceName);
+            super(404, `${resourceName} not found`);
         this.name = 'ResourceNotFoundException'
     }
 }
