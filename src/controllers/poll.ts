@@ -14,13 +14,14 @@ export default class PollController extends Controller {
         this.routerMatches = [{
             method: 'POST',
             path: '/',
-            handlers: [validationMiddleware(createPollSchema), PollController.createPoll]
+            handlers: [validationMiddleware({body: createPollSchema}), PollController.createPoll]
         }];
     };
 
     private static createPoll = async (req: express.Request, res: express.Response) => {
+        req.user = {email: 'a.tabatabaei97@gmail.com'};
         const {user, body} = req;
-        const poll = await PollService.getInstance().createPoll(user.id, body);
+        const poll = await PollService.getInstance().createPoll(user.email, body);
         res.status(201).send(poll);
     };
 }

@@ -1,14 +1,9 @@
-import {Column, CreateDateColumn, Entity, ManyToOne, UpdateDateColumn} from "typeorm";
+import {Column, CreateDateColumn, Entity, ManyToOne, OneToOne, UpdateDateColumn} from "typeorm";
 import Poll from "./poll";
+import Base from "./base";
 
 @Entity('meeting_times')
-export default class MeetingTime {
-    @CreateDateColumn({name: 'created_at'})
-    public createdAt: Date;
-
-    @UpdateDateColumn({name: 'updated_at'})
-    public updatedAt: Date;
-
+export default class MeetingTime extends Base {
     @Column('timestamp with time zone', {name: 'starts_at'})
     public startsAt: string;
 
@@ -21,6 +16,9 @@ export default class MeetingTime {
     @Column('smallint', {name: 'vote_against', default: 0})
     public voteAgainst: number;
 
-    @ManyToOne(type => Poll, poll => poll.possibleMeetingTimes, {primary: true, onDelete: 'CASCADE'})
+    @ManyToOne(type => Poll, poll => poll.possibleMeetingTimes, {onDelete: 'CASCADE'})
     public poll: Poll;
+
+    @Column({default: false})
+    public selected: boolean;
 }
