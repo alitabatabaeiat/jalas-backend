@@ -1,7 +1,7 @@
 version: "3"
 services:
   postgres:
-    container_name: postgres-finance
+    container_name: postgres-jalas
     build: .
     ports:
       - "2000:5432"
@@ -13,7 +13,7 @@ services:
   pgadmin:
     links:
       - postgres:postgres
-    container_name: pgadmin-finance
+    container_name: pgadmin-jalas
     image: dpage/pgadmin4
     ports:
       - "2001:80"
