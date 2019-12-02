@@ -20,7 +20,7 @@ export default class PollController extends Controller {
         }, {
             method: 'GET',
             path: '/:id',
-            handlers: [authMiddleware, validationMiddleware({params: idSchema}), PollController.getPoll]
+            handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.getPoll]
         }, {
             method: 'POST',
             path: '/',
@@ -28,7 +28,7 @@ export default class PollController extends Controller {
         }, {
             method: 'PUT',
             path: '/:id',
-            handlers: [authMiddleware, validationMiddleware({params: idSchema, body: updateVotesSchema}), PollController.updatePoll]
+            handlers: [authMiddleware, validationMiddleware({params: idSchema(), body: idSchema('meetingTimeId')}), PollController.updatePoll]
         }];
     };
 
@@ -52,7 +52,7 @@ export default class PollController extends Controller {
 
     private static updatePoll = async (req: express.Request, res: express.Response) => {
         const {user, params, body} = req;
-        const poll = await PollService.getInstance().updateVotes(user.email, params.id, body);
-        res.status(200).send(poll);
+        const poll = await PollService.getInstance().selectMeetingTime(user.email, params.id, body);
+        res.send('Poll updated successfully');
     }
 }

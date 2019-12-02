@@ -1,6 +1,8 @@
 import {getCustomRepository} from "typeorm";
-import PollRepository from "../repositories/poll";
 import MeetingTimeRepository from "../repositories/meetingTime";
+import HttpException from "../exceptions/httpException";
+import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
+import MeetingTime from "../entities/meetingTime";
 
 export default class MeetingTimeService {
     private static service: MeetingTimeService;
@@ -18,6 +20,20 @@ export default class MeetingTimeService {
 
     private static _getInstance = (): MeetingTimeService => new MeetingTimeService();
 
+    public selectMeetingTime = async (entityManager, pollId, meetingTimeId) => {
+        let error;
+        try {
+            let meetingTime = await this.repository.findOne({where: {poll: pollId, id: meetingTimeId}});
+            if (meetingTime)
+                return await entityManager.update(MeetingTime, meetingTimeId, {selected: true});
+            else error = new ResourceNotFoundException('MeetingTime');
+        } catch (ex) {
+            console.log(ex)
+            throw new HttpException();
+        }
+        throw error;
+    };
+
     public updateVotes = async (pollId, meetingTimes) => {
         const result = await this.repository.query(`
             update meeting_times as mt set
@@ -25,9 +41,9 @@ export default class MeetingTimeService {
                 vote_against = c.vote_against
             from (values
                 ${
-                    meetingTimes.reduce((query, meetingTime) => query + `('${meetingTime.id}', ${meetingTime.voteFor}, ${meetingTime.voteAgainst}),`,
-                        '').slice(0, -1)
-                }
+            meetingTimes.reduce((query, meetingTime) => query + `('${meetingTime.id}', ${meetingTime.voteFor}, ${meetingTime.voteAgainst}),`,
+                '').slice(0, -1)
+        }
             ) as c(id, vote_for, vote_against) 
             where c.id = mt.id::text and mt."pollId" = '${pollId}';
         `);

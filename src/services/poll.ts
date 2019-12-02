@@ -68,6 +68,26 @@ export default class PollService {
         return newPoll;
     };
 
+    public selectMeetingTime = async (user, pollId, meetingTime) => {
+        let error;
+        try {
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            if (poll && poll.state === 0) {
+                return await this.repository.manager.transaction(async entityManager => {
+                   await entityManager.update(Poll, pollId, {state: 1});
+                   await MeetingTimeService.getInstance().selectMeetingTime(entityManager, pollId, meetingTime.meetingTimeId);
+                });
+            } else if (poll.state !== 0)
+                error = new HttpException(401, 'Meeting time selected before');
+            else error = new ResourceNotFoundException('Poll');
+        } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+        throw error;
+    };
+
     public updateVotes = async (userId, pollId, updateVotes) => {
         let error;
         try {
