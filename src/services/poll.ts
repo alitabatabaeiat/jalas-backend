@@ -3,6 +3,9 @@ import PollRepository from "../repositories/poll";
 import Poll from "../entities/poll";
 import MeetingTime from "../entities/meetingTime";
 import User from "../entities/user";
+import MeetingTimeService from "./meetingTime";
+import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
+import HttpException from "../exceptions/httpException";
 
 export default class PollService {
     private static service: PollService;
@@ -39,5 +42,27 @@ export default class PollService {
         newPoll = await this.repository.save(newPoll);
         newPoll.possibleMeetingTimes.forEach(meetingTime => delete meetingTime.poll);
         return newPoll;
+    };
+
+    public updateVotes = async (userId, pollId, updateVotes) => {
+        let error;
+        try {
+            const poll = await this.repository.findOne(pollId, {
+                loadRelationIds: {
+                    relations: ['owner', 'participants']
+                }
+            });
+            if (poll) {
+                if (poll.owner === userId || poll.participants.find(participant => participant === userId) === userId)
+                    return await MeetingTimeService.getInstance().updateVotes(pollId, updateVotes.possibleMeetingTimes);
+                else
+                    error = new HttpException(403, 'sorry you cannot vote for this poll');
+            }
+            else
+                error = new ResourceNotFoundException('Poll', 'id', pollId);
+        } catch (ex) {
+            throw new HttpException();
+        }
+        throw error;
     }
 }

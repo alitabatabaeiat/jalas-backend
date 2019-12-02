@@ -26,4 +26,13 @@ const createPollSchema = Joi.object({
     participants: rules.participants.required()
 });
 
-export {createPollSchema};
+const updateVotesSchema = Joi.object({
+    possibleMeetingTimes: Joi.array().items(
+        Joi.object({
+            voteFor: rules.possibleMeetingTimes.voteFor.required(),
+            voteAgainst: rules.possibleMeetingTimes.voteAgainst.required()
+        })
+    ).min(1).required(),
+});
+
+export {createPollSchema, updateVotesSchema};
