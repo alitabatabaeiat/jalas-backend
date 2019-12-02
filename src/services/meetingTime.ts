@@ -24,8 +24,10 @@ export default class MeetingTimeService {
         let error;
         try {
             let meetingTime = await this.repository.findOne({where: {poll: pollId, id: meetingTimeId}});
-            if (meetingTime)
-                return await entityManager.update(MeetingTime, meetingTimeId, {selected: true});
+            if (meetingTime) {
+                await entityManager.update(MeetingTime, meetingTimeId, {selected: true});
+                return meetingTime;
+            }
             else error = new ResourceNotFoundException('MeetingTime');
         } catch (ex) {
             console.log(ex)

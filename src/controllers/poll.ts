@@ -4,7 +4,7 @@ import Controller from './controller';
 import PollService from '../services/poll';
 import validationMiddleware from "../middlewares/validation";
 import authMiddleware from "../middlewares/auth";
-import {createPollSchema, updateVotesSchema} from "../validations/poll";
+import {createPollSchema} from "../validations/poll";
 import {idSchema} from "../validations/common";
 
 export default class PollController extends Controller {
@@ -52,7 +52,7 @@ export default class PollController extends Controller {
 
     private static updatePoll = async (req: express.Request, res: express.Response) => {
         const {user, params, body} = req;
-        const poll = await PollService.getInstance().selectMeetingTime(user.email, params.id, body);
-        res.send('Poll updated successfully');
+        const response = await PollService.getInstance().selectMeetingTime(user.email, params.id, body);
+        res.send(response);
     }
 }

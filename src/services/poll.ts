@@ -6,6 +6,8 @@ import User from "../entities/user";
 import MeetingTimeService from "./meetingTime";
 import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 import HttpException from "../exceptions/httpException";
+import ReservationsService from "./reservation";
+import moment = require("moment");
 
 export default class PollService {
     private static service: PollService;
@@ -68,21 +70,32 @@ export default class PollService {
         return newPoll;
     };
 
-    public selectMeetingTime = async (user, pollId, meetingTime) => {
+    public selectMeetingTime = async (user, pollId, {meetingTimeId}) => {
         let error;
         try {
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            let meetingTime;
             if (poll && poll.state === 0) {
-                return await this.repository.manager.transaction(async entityManager => {
+                await this.repository.manager.transaction(async entityManager => {
                    await entityManager.update(Poll, pollId, {state: 1});
-                   await MeetingTimeService.getInstance().selectMeetingTime(entityManager, pollId, meetingTime.meetingTimeId);
+                   meetingTime = await MeetingTimeService.getInstance().selectMeetingTime(entityManager, pollId, meetingTimeId);
                 });
+                const {data: {availableRooms}} = await ReservationsService.getInstance().getAvailableRooms(
+                    moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
+                    moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
+                );
+                return availableRooms;
             } else if (poll.state !== 0)
                 error = new HttpException(401, 'Meeting time selected before');
             else error = new ResourceNotFoundException('Poll');
         } catch (ex) {
-            if (ex instanceof HttpException)
-                throw ex;
+            if (ex instanceof HttpException) {
+                // Reservation service unavailable
+                if (ex.status === 503)
+                    return ex.message;
+                else
+                    throw ex;
+            }
             throw new HttpException();
         }
         throw error;
