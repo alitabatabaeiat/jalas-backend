@@ -67,7 +67,10 @@ export default class PollService {
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
                 if (ex.status === 503)
-                    return ex.message;
+                    return {
+                        message: ex.message,
+                        error: true
+                    };
                 else
                     throw ex;
             }
@@ -191,7 +194,10 @@ export default class PollService {
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
                 if (ex.status === 503)
-                    return ex.message;
+                    return {
+                        message: ex.message,
+                        error: true
+                    };
                 else
                     throw ex;
             }
