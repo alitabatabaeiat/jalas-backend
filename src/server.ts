@@ -7,7 +7,7 @@ import config from "./ormconfig";
 import envSchema from "./validations/env";
 import PollController from "./controllers/poll";
 import AuthController from "./controllers/auth";
-import {sendMail} from "./utilities/mail";
+import QualityInUseController from "./controllers/qualityInUse";
 
 (async () => {
     try {
@@ -19,7 +19,8 @@ import {sendMail} from "./utilities/mail";
         await createConnection(config);
         const controllers = [
             new AuthController(),
-            new PollController()
+            new PollController(),
+            new QualityInUseController()
         ];
         const app = new App(controllers);
         app.listen();
