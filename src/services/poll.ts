@@ -9,6 +9,7 @@ import HttpException from "../exceptions/httpException";
 import ReservationsService from "./reservation";
 import moment = require("moment");
 import {sendMail} from "../utilities/mail";
+import QualityInUseService from "./qualityInUse";
 
 export default class PollService {
     private static service: PollService;
@@ -41,7 +42,6 @@ export default class PollService {
                 where: {owner: user, id: pollId},
                 relations: ['possibleMeetingTimes', 'owner', 'participants']
             });
-            console.log(poll)
             if (poll) return poll;
             else error = new ResourceNotFoundException('Poll');
         } catch (ex) {
@@ -77,17 +77,21 @@ export default class PollService {
     };
 
     public reserveRoom = async (user, pollId, {room}) => {
-        let error, meetingTime;
+        let error, poll, meetingTime, result;
         try {
-            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 const result = await ReservationsService.getInstance().reserveRoom(room, user,
                     moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
                     moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
                 );
-                await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
-                this.sendRoomReservationUpdateMail(user, room, true);
+                await this.repository.manager.transaction(async entityManager => {
+                    await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
+                    await QualityInUseService.getInstance().reserveRoom();
+                    await QualityInUseService.getInstance().pollCreated(pollId);
+                });
+                this.sendRoomReservationUpdateMail(user, poll.title, room, true);
                 return result;
             } else if (poll.state !== 1)
                 error = new HttpException(401, 'Cannot reserve room for this poll');
@@ -100,7 +104,7 @@ export default class PollService {
                     let interval = setInterval(async () => {
                         let status;
                         try {
-                            const result = await ReservationsService.getInstance().reserveRoom(room, user,
+                            await ReservationsService.getInstance().reserveRoom(room, user,
                                 moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
                                 moment(meetingTime.endsAt).local().format('YYYY-MM-DDTHH:mm:ss')
                             );
@@ -110,15 +114,19 @@ export default class PollService {
                         }
                         if (interval) {
                             if (status === 200) {
-                                await this.repository.update(pollId, {state: 3});
                                 clearInterval(interval);
                                 interval = null;
-                                this.sendRoomReservationUpdateMail(user, room, true);
+                                await this.repository.manager.transaction(async entityManager => {
+                                    await this.repository.update(pollId, {state: 3});
+                                    await QualityInUseService.getInstance().reserveRoom();
+                                    await QualityInUseService.getInstance().pollCreated(pollId);
+                                });
+                                this.sendRoomReservationUpdateMail(user, poll.title, room, true);
                             } else if (status === 400) {
-                                await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
                                 clearInterval(interval);
                                 interval = null;
-                                this.sendRoomReservationUpdateMail(user, room, false);
+                                await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
+                                this.sendRoomReservationUpdateMail(user, poll.title, room, false);
                             }
                         }
                     }, 1000);
@@ -130,11 +138,11 @@ export default class PollService {
         throw error;
     };
 
-    private sendRoomReservationUpdateMail = (owner, room, successful) => {
+    private sendRoomReservationUpdateMail = (owner, pollTitle, room, successful) => {
           sendMail({
-              from: `Ali Tabatabaei <${process.env.EMAIL_ADDRESS}>`,
+              from: `Jalas <${process.env.EMAIL_ADDRESS}>`,
               to: owner,
-              subject: `Reservation state changed`,
+              subject: `Reservation state changed(${pollTitle})`,
               text: `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`
           });
     };
@@ -167,8 +175,10 @@ export default class PollService {
             let meetingTime;
             if (poll && poll.state === 0) {
                 await this.repository.manager.transaction(async entityManager => {
-                    await entityManager.update(Poll, pollId, {state: 1});
-                    meetingTime = await MeetingTimeService.getInstance().selectMeetingTime(entityManager, pollId, meetingTimeId);
+                    await this.repository.update(pollId, {state: 1});
+                    meetingTime = await MeetingTimeService.getInstance().selectMeetingTime(pollId, meetingTimeId);
+                    await QualityInUseService.getInstance().pollChanged(pollId);
+                    await QualityInUseService.getInstance().userEntersPollPage(pollId);
                 });
                 return await ReservationsService.getInstance().getAvailableRooms(
                     moment(meetingTime.startsAt).local().format('YYYY-MM-DDTHH:mm:ss'),
@@ -195,7 +205,11 @@ export default class PollService {
         try {
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state < 3) {
-                return await this.repository.delete(pollId);
+                await this.repository.manager.transaction(async entityManager => {
+                    await this.repository.delete(pollId);
+                    await QualityInUseService.getInstance().pollChanged(pollId);
+                });
+                return;
             } else if (poll.state === 3)
                 error = new HttpException(400, 'Poll cannot be removed');
             else error = new ResourceNotFoundException('Poll');

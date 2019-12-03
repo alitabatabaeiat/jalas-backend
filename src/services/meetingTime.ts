@@ -20,12 +20,12 @@ export default class MeetingTimeService {
 
     private static _getInstance = (): MeetingTimeService => new MeetingTimeService();
 
-    public selectMeetingTime = async (entityManager, pollId, meetingTimeId) => {
+    public selectMeetingTime = async (pollId, meetingTimeId) => {
         let error;
         try {
             let meetingTime = await this.repository.findOne({where: {poll: pollId, id: meetingTimeId}});
             if (meetingTime) {
-                await entityManager.update(MeetingTime, meetingTimeId, {selected: true});
+                await this.repository.update(meetingTimeId, {selected: true});
                 return meetingTime;
             } else error = new ResourceNotFoundException('MeetingTime');
         } catch (ex) {
