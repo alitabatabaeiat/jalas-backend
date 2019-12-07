@@ -1,0 +1,27 @@
+version: "3"
+services:
+  server:
+    links:
+      - db:db
+    container_name: jalas-server
+    build:
+      context: ../
+      dockerfile: ./docker/server/Dockerfile
+    ports:
+      - "3002:3002"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  db:
+    container_name: jalas-db
+    build: ./db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    env_file:
+      - ./db/docker.env
+
+volumes:
+  pg-data:
+    driver: local
