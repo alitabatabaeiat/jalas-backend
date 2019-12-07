@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import 'reflect-metadata';
 import {createConnection} from "typeorm";
 
@@ -8,6 +9,8 @@ import envSchema from "./validations/env";
 import PollController from "./controllers/poll";
 import AuthController from "./controllers/auth";
 import QualityInUseController from "./controllers/qualityInUse";
+import UserService from "./services/user";
+
 
 (async () => {
     try {
@@ -17,6 +20,7 @@ import QualityInUseController from "./controllers/qualityInUse";
             process.exit(1);
         }
         await createConnection(config);
+        await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com'});
         const controllers = [
             new AuthController(),
             new PollController(),
