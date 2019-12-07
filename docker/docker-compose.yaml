@@ -1,22 +1,30 @@
 version: "3"
 services:
-  server:
+  nginx:
+    links:
+      - node:node
+    container_name: jalas-nginx
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - node
+
+  node:
     links:
       - db:db
-    container_name: jalas-server
+    container_name: jalas-node
     build:
       context: ../
-      dockerfile: ./docker/server/Dockerfile
-    ports:
-      - "3002:3002"
+      dockerfile: docker/node/Dockerfile
     volumes:
       - pg-data:/var/lib/postgresql/data
+    depends_on:
+      - db
 
   db:
     container_name: jalas-db
     build: ./db
-    ports:
-      - "5432:5432"
     volumes:
       - pg-data:/var/lib/postgresql/data
     env_file:

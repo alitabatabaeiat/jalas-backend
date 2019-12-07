@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node ./src/server.ts",
-    "watch": "nodemon -e ts -w ./src -x npm run watch:serve",
+    "dev": "NODE_ENV=dev ts-node ./src/server.ts",
+    "watch": "NODE_ENV=dev nodemon -e ts -w ./src -x npm run watch:serve",
     "watch:serve": "node --inspect -r ts-node/register src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "clean": "rm -rf ./dist/* "
   },
   "repository": {
     "type": "git",
