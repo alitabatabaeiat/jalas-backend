@@ -1,5 +1,4 @@
 import * as dotenv from 'dotenv';
-
 dotenv.config({path: `${__dirname}/../.env.${process.env.NODE_ENV}`});
 import 'reflect-metadata';
 import {createConnection} from "typeorm";
@@ -20,8 +19,7 @@ import UserService from "./services/user";
             console.error(error.details);
             process.exit(1);
         }
-        const {isConnected} = await createConnection(config);
-        console.log(isConnected);
+        await createConnection(config);
         await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com'});
         const controllers = [
             new AuthController(),

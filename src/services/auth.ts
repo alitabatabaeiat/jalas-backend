@@ -1,6 +1,6 @@
 import {getCustomRepository} from "typeorm";
 import HttpException from "../exceptions/httpException";
-import UnAuthorizedException from "../exceptions/UnAuthorizedException";
+import UnAuthorizedException from "../exceptions/unAuthorizedException";
 import UserRepository from "../repositories/user";
 
 

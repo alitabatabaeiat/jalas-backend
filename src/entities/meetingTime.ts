@@ -8,7 +8,7 @@ export default class MeetingTime extends Base {
     public startsAt: string;
 
     @Column('timestamp with time zone', {name: 'ends_at'})
-    public endsAt: number;
+    public endsAt: string;
 
     @Column('smallint', {name: 'vote_for', default: 0})
     public voteFor: number;

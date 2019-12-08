@@ -1,8 +1,10 @@
 import axios from 'axios';
 import HttpException from "../exceptions/httpException";
+import moment from "moment-timezone";
 
 export default class ReservationsService {
     private static service: ReservationsService;
+    private readonly baseURL: string = 'http://213.233.176.40';
 
     private constructor() {
     };
@@ -15,10 +17,13 @@ export default class ReservationsService {
 
     private static _getInstance = (): ReservationsService => new ReservationsService();
 
-    public getAvailableRooms = async (start, end) => {
+    public getAvailableRooms = async (start: string, end: string) => {
         try {
-            const {data} = await axios.get('http://213.233.176.40/available_rooms', {
-                params: {start, end},
+            const {data} = await axios.get(`${this.baseURL}/available_rooms`, {
+                params: {
+                    start: moment(start).tz('Asia/Tehran').format('YYYY-MM-DDTHH:mm:ss'),
+                    end: moment(end).tz('Asia/Tehran').format('YYYY-MM-DDTHH:mm:ss')
+                },
                 timeout: 10000
             });
             return data;
@@ -27,10 +32,12 @@ export default class ReservationsService {
         }
     };
 
-    public reserveRoom = async (room, username, start, end) => {
+    public reserveRoom = async (room: number, username: string, start: string, end: string) => {
         try {
-            const {data} = await axios.post(`http://213.233.176.40/rooms/${room}/reserve`, {
-                username, start, end
+            const {data} = await axios.post(`${this.baseURL}/rooms/${room}/reserve`, {
+                username,
+                start: moment(start).tz('Asia/Tehran').format('YYYY-MM-DDTHH:mm:ss'),
+                end: moment(end).tz('Asia/Tehran').format('YYYY-MM-DDTHH:mm:ss')
             }, {
                 timeout: 10000
             });

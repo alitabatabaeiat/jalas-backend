@@ -1,5 +1,5 @@
 import * as Joi from '@hapi/joi';
-import UnAuthorizedException from "../exceptions/UnAuthorizedException";
+import UnAuthorizedException from "../exceptions/unAuthorizedException";
 
 export default async function auth(req, res, next) {
     let token = req.header('Authorization');
