@@ -2,6 +2,7 @@ import {getCustomRepository} from "typeorm";
 import HttpException from "../exceptions/httpException";
 import UserRepository from "../repositories/user";
 import User from "../entities/user";
+import InvalidRequestException from "../exceptions/invalidRequestException";
 
 
 export default class UserService {
@@ -23,13 +24,17 @@ export default class UserService {
     public createUser = async (user) => {
         let error;
         try {
-            let newUser = new User();
-            newUser.email = user.email;
-            await this.repository.save(newUser);
-            return {
-                message: 'User created successfully',
-                accessToken: `Bearer ${user.email}`
-            }
+            const userExist = await this.repository.findOne({email: user.email}, {select: ['id']});
+            if (!userExist) {
+                let newUser = new User();
+                newUser.email = user.email;
+                await this.repository.insert(newUser);
+                return {
+                    message: 'User created successfully',
+                    accessToken: `Bearer ${user.email}`
+                }
+            } else
+                error = new InvalidRequestException(`User with email '${user.email} exists'`);
         } catch (ex) {
             throw new HttpException();
         }

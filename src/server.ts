@@ -20,7 +20,9 @@ import UserService from "./services/user";
             process.exit(1);
         }
         await createConnection(config);
-        await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com'});
+        try {
+            await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com'});
+        } catch (ex) {}
         const controllers = [
             new AuthController(),
             new PollController(),
