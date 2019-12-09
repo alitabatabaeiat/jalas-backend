@@ -3,6 +3,7 @@ import HttpException from "../exceptions/httpException";
 import UserRepository from "../repositories/user";
 import User from "../entities/user";
 import InvalidRequestException from "../exceptions/invalidRequestException";
+import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 
 
 export default class UserService {
@@ -35,6 +36,20 @@ export default class UserService {
                 }
             } else
                 error = new InvalidRequestException(`User with email '${user.email} exists'`);
+        } catch (ex) {
+            throw new HttpException();
+        }
+        throw error;
+    };
+
+    public getUser = async (userEmail: string) => {
+        let error;
+        try {
+            const user = await this.repository.findOne({email: userEmail}, {select: ['id']});
+            if (user)
+                return user;
+            else
+                error = new ResourceNotFoundException(User.name, 'email', userEmail);
         } catch (ex) {
             throw new HttpException();
         }
