@@ -22,6 +22,14 @@ import UserService from "./services/user";
         await createConnection(config);
         try {
             await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com'});
+            await UserService.getInstance().createUser({email: 'h.ghadimi1998@gmail.com'});
+            await UserService.getInstance().createUser({email: 'm.nourbakhsh75@gmail.com'});
+            await UserService.getInstance().createUser({email: 'a.tabatabaei97@icloud.com'});
+            await UserService.getInstance().createUser({email: 'a.tabatabaei97@hotmail.com'});
+            await UserService.getInstance().createUser({email: 'ali@gmail.com'});
+            await UserService.getInstance().createUser({email: 'gholam@gmail.com'});
+            await UserService.getInstance().createUser({email: 'bashir@gmail.com'});
+            await UserService.getInstance().createUser({email: 'saeed@gmail.com'});
         } catch (ex) {}
         const controllers = [
             new AuthController(),

@@ -1,9 +1,8 @@
 import {getCustomRepository} from "typeorm";
 import moment from "moment";
+import _ from 'lodash';
 import PollRepository from "../repositories/poll";
 import Poll from "../entities/poll";
-import MeetingTime from "../entities/meetingTime";
-import User from "../entities/user";
 import MeetingTimeService from "./meetingTime";
 import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 import HttpException from "../exceptions/httpException";
@@ -11,6 +10,7 @@ import ReservationsService from "./reservation";
 import {sendMail} from "../utilities/mail";
 import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
+import UserService from "./user";
 
 export default class PollService {
     private static service: PollService;
@@ -28,12 +28,35 @@ export default class PollService {
 
     private static _getInstance = (): PollService => new PollService();
 
+    public createPoll = async (ownerEmail: string, poll) => {
+        try {
+            let newPoll = new Poll();
+            newPoll.title = poll.title;
+            newPoll.owner = await UserService.getInstance().getUser(ownerEmail);
+            newPoll.participants = await Promise.all(poll.participants.map(async participant =>
+                await UserService.getInstance().getUser(participant)
+            ));
+            await this.repository.manager.transaction(async entityManager => {
+                await this.repository.insert(newPoll);
+                newPoll.possibleMeetingTimes = await Promise.all(poll.possibleMeetingTimes.map(async possibleMeetingTime => {
+                    const meetingTime = await MeetingTimeService.getInstance().createMeetingTime(possibleMeetingTime, newPoll.id);
+                    return _.omit(meetingTime, ['updatedAt', 'createdAt']);
+                }));
+            });
+            return newPoll;
+        } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    };
+
     public getPolls = async (user) => {
         try {
             return await this.repository.find({
                 where: {owner: user},
                 order: {createdAt: 'DESC'},
-                select: ["id", "owner", "room", "state", "title", "updatedAt"]
+                select: ["id", "owner", "room", "state", "title"]
             });
         } catch (ex) {
             throw new HttpException();
@@ -137,27 +160,6 @@ export default class PollService {
             subject: `Reservation state changed(${pollTitle})`,
             text: `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`
         });
-    };
-
-    public createPoll = async (owner, poll) => {
-        let newPoll = new Poll();
-        newPoll.title = poll.title;
-        newPoll.owner = owner;
-        newPoll.possibleMeetingTimes = poll.possibleMeetingTimes.map(possibleMeetingTime => {
-            const newPMT = new MeetingTime();
-            newPMT.startsAt = possibleMeetingTime.startsAt;
-            newPMT.endsAt = possibleMeetingTime.endsAt;
-            newPMT.poll = newPoll;
-            return newPMT;
-        });
-        newPoll.participants = poll.participants.map(participant => {
-            const user = new User();
-            user.email = participant;
-            return user;
-        });
-        newPoll = await this.repository.save(newPoll);
-        newPoll.possibleMeetingTimes.forEach(meetingTime => delete meetingTime.poll);
-        return newPoll;
     };
 
     public selectMeetingTime = async (user, pollId, {meetingTimeId}) => {

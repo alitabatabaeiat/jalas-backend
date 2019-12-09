@@ -21,10 +21,10 @@ export default class MeetingTimeService {
 
     private static _getInstance = (): MeetingTimeService => new MeetingTimeService();
 
-    public createMeetingTime = async (meetingTime: {startsAt, endsAt, pollId}) => {
+    public createMeetingTime = async (meetingTime: {startsAt, endsAt}, pollId) => {
         try {
             const newMeetingTime = new MeetingTime();
-            newMeetingTime.poll = meetingTime.pollId;
+            newMeetingTime.poll = pollId;
             newMeetingTime.startsAt = meetingTime.startsAt;
             newMeetingTime.endsAt = meetingTime.endsAt;
             await this.repository.insert(newMeetingTime);
