@@ -1,4 +1,4 @@
-import * as Joi from '@hapi/joi';
+import Joi from '@hapi/joi';
 
 const envSchema = Joi.object({
     PORT: Joi.number().port().required(),

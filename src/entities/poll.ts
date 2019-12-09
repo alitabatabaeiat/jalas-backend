@@ -17,7 +17,7 @@ export default class Poll extends BaseEntity {
     @Column('timestamp with time zone', {name: 'room_requested_at', nullable: true})
     public roomRequestedAt: Date;
 
-    @OneToMany(type => MeetingTime, meetingTime => meetingTime.poll)
+    @OneToMany(type => MeetingTime, meetingTime => meetingTime.poll, {cascade: true})
     public possibleMeetingTimes: MeetingTime[];
 
     @ManyToOne(type => User)

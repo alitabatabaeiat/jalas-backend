@@ -1,5 +1,5 @@
-import * as express from 'express';
-import * as cors from 'cors';
+import express from 'express';
+import cors from 'cors';
 import Controller from "./controllers/controller";
 import notFoundMiddleware from "./middlewares/notFound";
 import errorMiddleware from "./middlewares/error";

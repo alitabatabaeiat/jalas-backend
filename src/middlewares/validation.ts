@@ -1,5 +1,4 @@
-import * as Joi from '@hapi/joi';
-import * as express from 'express';
+import express from 'express';
 import HttpException from "../exceptions/httpException";
 import ValidationException from "../exceptions/validationException";
 

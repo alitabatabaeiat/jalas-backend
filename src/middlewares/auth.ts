@@ -1,4 +1,4 @@
-import * as Joi from '@hapi/joi';
+import Joi from '@hapi/joi';
 import UnAuthorizedException from "../exceptions/unAuthorizedException";
 
 export default async function auth(req, res, next) {

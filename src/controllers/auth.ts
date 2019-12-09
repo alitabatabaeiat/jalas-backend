@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 
 import Controller from './controller';
 import AuthService from "../services/auth";

@@ -1,5 +1,3 @@
-import * as express from 'express';
-
 import Controller from './controller';
 import PollService from '../services/poll';
 import validationMiddleware from "../middlewares/validation";

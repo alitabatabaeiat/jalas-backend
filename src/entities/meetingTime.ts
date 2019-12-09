@@ -5,10 +5,10 @@ import Base from "./base";
 @Entity('meeting_times')
 export default class MeetingTime extends Base {
     @Column('timestamp with time zone', {name: 'starts_at'})
-    public startsAt: string;
+    public startsAt: Date;
 
     @Column('timestamp with time zone', {name: 'ends_at'})
-    public endsAt: string;
+    public endsAt: Date;
 
     @Column('smallint', {name: 'vote_for', default: 0})
     public voteFor: number;

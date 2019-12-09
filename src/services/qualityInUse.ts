@@ -1,8 +1,8 @@
 import {getCustomRepository} from "typeorm";
+import moment from "moment";
 import HttpException from "../exceptions/httpException";
 import QualityInUseRepository from "../repositories/qualityInUse";
 import QualityInUse from "../entities/qualityInUse";
-import moment = require("moment");
 
 export default class QualityInUseService {
     private static service: QualityInUseService;

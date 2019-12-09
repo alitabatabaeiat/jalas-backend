@@ -1,6 +1,6 @@
 import axios from 'axios';
-import HttpException from "../exceptions/httpException";
 import moment from "moment-timezone";
+import HttpException from "../exceptions/httpException";
 
 export default class ReservationsService {
     private static service: ReservationsService;
@@ -17,7 +17,7 @@ export default class ReservationsService {
 
     private static _getInstance = (): ReservationsService => new ReservationsService();
 
-    public getAvailableRooms = async (start: string, end: string) => {
+    public getAvailableRooms = async (start: Date, end: Date) => {
         try {
             const {data} = await axios.get(`${this.baseURL}/available_rooms`, {
                 params: {
@@ -32,7 +32,7 @@ export default class ReservationsService {
         }
     };
 
-    public reserveRoom = async (room: number, username: string, start: string, end: string) => {
+    public reserveRoom = async (room: number, username: string, start: Date, end: Date) => {
         try {
             const {data} = await axios.post(`${this.baseURL}/rooms/${room}/reserve`, {
                 username,

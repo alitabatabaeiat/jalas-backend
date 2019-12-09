@@ -1,4 +1,5 @@
 import {getCustomRepository} from "typeorm";
+import moment from "moment";
 import PollRepository from "../repositories/poll";
 import Poll from "../entities/poll";
 import MeetingTime from "../entities/meetingTime";
@@ -7,7 +8,6 @@ import MeetingTimeService from "./meetingTime";
 import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 import HttpException from "../exceptions/httpException";
 import ReservationsService from "./reservation";
-import moment = require("moment");
 import {sendMail} from "../utilities/mail";
 import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
@@ -33,7 +33,7 @@ export default class PollService {
             return await this.repository.find({
                 where: {owner: user},
                 order: {createdAt: 'DESC'},
-                select: ["id", "owner", "room", "state", "title"]
+                select: ["id", "owner", "room", "state", "title", "updatedAt"]
             });
         } catch (ex) {
             throw new HttpException();
@@ -45,7 +45,7 @@ export default class PollService {
         try {
             const poll = await this.repository.findOne({
                 where: {owner: user, id: pollId},
-                select: ["id", "owner", "room", "state", "title", "possibleMeetingTimes", "owner", "participants"],
+                select: ["id", "owner", "room", "state", "title"],
                 relations: ['possibleMeetingTimes', 'owner', 'participants']
             });
             if (poll) return poll;
