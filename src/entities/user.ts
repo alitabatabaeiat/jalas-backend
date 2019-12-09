@@ -1,13 +1,8 @@
-import {Column, CreateDateColumn, Entity, UpdateDateColumn} from "typeorm";
+import {Column, Entity} from "typeorm";
+import Base from "./base";
 
 @Entity('users')
-export default class User {
-    @CreateDateColumn({name: 'created_at'})
-    public createdAt: Date;
-
-    @UpdateDateColumn({name: 'updated_at'})
-    public updatedAt: Date;
-
-    @Column({length: 30, unique: true, primary: true})
+export default class User extends Base {
+    @Column({length: 50, unique: true})
     public email: string;
 }
