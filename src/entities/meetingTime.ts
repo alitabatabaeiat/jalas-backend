@@ -1,6 +1,7 @@
-import {Column, CreateDateColumn, Entity, JoinTable, ManyToOne, OneToOne, UpdateDateColumn} from "typeorm";
+import {Column, Entity, ManyToOne, OneToMany} from "typeorm";
 import Poll from "./poll";
 import Base from "./base";
+import Vote from "./vote";
 
 @Entity('meeting_times')
 export default class MeetingTime extends Base {
@@ -9,6 +10,9 @@ export default class MeetingTime extends Base {
 
     @Column('timestamp with time zone', {name: 'ends_at'})
     public endsAt: Date;
+
+    @OneToMany(type => Vote, vote => vote.meetingTime)
+    public votes: Vote[];
 
     @Column('smallint', {name: 'vote_for', default: 0})
     public voteFor: number;
