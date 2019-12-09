@@ -21,6 +21,19 @@ export default class MeetingTimeService {
 
     private static _getInstance = (): MeetingTimeService => new MeetingTimeService();
 
+    public createMeetingTime = async (meetingTime: {startsAt, endsAt, pollId}) => {
+        try {
+            const newMeetingTime = new MeetingTime();
+            newMeetingTime.poll = meetingTime.pollId;
+            newMeetingTime.startsAt = meetingTime.startsAt;
+            newMeetingTime.endsAt = meetingTime.endsAt;
+            await this.repository.insert(newMeetingTime);
+            return newMeetingTime;
+        } catch (ex) {
+            throw new HttpException();
+        }
+    };
+
     public selectMeetingTime = async (pollId, meetingTimeId) => {
         let error;
         try {
