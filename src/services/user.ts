@@ -45,7 +45,7 @@ export default class UserService {
     public getUser = async (userEmail: string) => {
         let error;
         try {
-            const user = await this.repository.findOne({email: userEmail}, {select: ['id']});
+            const user = await this.repository.findOne({email: userEmail}, {select: ['id', 'email']});
             if (user)
                 return user;
             else
