@@ -13,15 +13,15 @@ export default class MeetingTimeService {
     private constructor() {
     };
 
-    public static getInstance() {
+    public static getInstance(manager?: EntityManager) {
         if (!MeetingTimeService.service)
             MeetingTimeService.service = MeetingTimeService._getInstance();
-        return MeetingTimeService.service.setManager();
+        return MeetingTimeService.service._setManager(manager);
     }
 
     private static _getInstance = (): MeetingTimeService => new MeetingTimeService();
 
-    public setManager = (manager: EntityManager = getManager()) => {
+    private _setManager = (manager: EntityManager = getManager()) => {
         this.repository = manager.getCustomRepository(MeetingTimeRepository);
         return this;
     };
