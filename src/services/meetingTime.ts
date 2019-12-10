@@ -31,6 +31,7 @@ export default class MeetingTimeService {
         newMeetingTime.poll = pollId;
         newMeetingTime.startsAt = meetingTime.startsAt;
         newMeetingTime.endsAt = meetingTime.endsAt;
+        newMeetingTime.votes = [];
         return newMeetingTime;
     };
 
