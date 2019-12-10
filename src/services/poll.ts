@@ -13,9 +13,11 @@ import UserService from "./user";
 
 export default class PollService {
     private static service: PollService;
-    protected repository: PollRepository;
+    private mainRepository: PollRepository;
+    private repository: PollRepository;
 
     private constructor() {
+        this.mainRepository = getManager().getCustomRepository(PollRepository);
     };
 
     public static getInstance(manager?: EntityManager) {
@@ -109,13 +111,14 @@ export default class PollService {
             if (poll && poll.state === 1) {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 const result = await ReservationsService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
-                await this.repository.manager.transaction(async entityManager => {
+                await getManager().transaction(async entityManager => {
                     await this._setManager(entityManager).repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
                     const qualityInUseService = QualityInUseService.getInstance(entityManager);
                     await qualityInUseService.reserveRoom();
                     await qualityInUseService.pollCreated(pollId);
+                    throw new HttpException(503);
                 });
-                this.sendRoomReservationUpdateMail(user, poll.title, room, true);
+                this.sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                 return result;
             } else if (poll.state !== 1)
                 error = new HttpException(401, 'Cannot reserve room for this poll');
@@ -124,7 +127,7 @@ export default class PollService {
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
                 if (ex.status === 503) {
-                    await this.repository.update(pollId, {state: 2, room, roomRequestedAt: moment().toISOString()});
+                    await this.mainRepository.update(pollId, {state: 2, room, roomRequestedAt: moment().toISOString()});
                     let interval = setInterval(async () => {
                         let status;
                         try {
@@ -137,17 +140,18 @@ export default class PollService {
                             if (status === 200) {
                                 clearInterval(interval);
                                 interval = null;
-                                await this.repository.manager.transaction(async entityManager => {
-                                    await this.repository.update(pollId, {state: 3});
-                                    await QualityInUseService.getInstance().reserveRoom();
-                                    await QualityInUseService.getInstance().pollCreated(pollId);
+                                await getManager().transaction(async entityManager => {
+                                    await this._setManager(entityManager).repository.update(pollId, {state: 3});
+                                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
+                                    await qualityInUseService.reserveRoom();
+                                    await qualityInUseService.pollCreated(pollId);
                                 });
-                                this.sendRoomReservationUpdateMail(user, poll.title, room, true);
+                                this.sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                             } else if (status === 400) {
                                 clearInterval(interval);
                                 interval = null;
-                                await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
-                                this.sendRoomReservationUpdateMail(user, poll.title, room, false);
+                                await this.mainRepository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
+                                this.sendRoomReservationUpdateMail(user.email, poll.title, room, false);
                             }
                         }
                     }, 1000);
