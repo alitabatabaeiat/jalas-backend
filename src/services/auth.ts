@@ -1,4 +1,4 @@
-import {getCustomRepository} from "typeorm";
+import {EntityManager, getManager} from "typeorm";
 import HttpException from "../exceptions/httpException";
 import UnAuthorizedException from "../exceptions/unAuthorizedException";
 import UserRepository from "../repositories/user";
@@ -9,16 +9,20 @@ export default class AuthService {
     protected repository: UserRepository;
 
     private constructor() {
-        this.repository = getCustomRepository(UserRepository);
     };
 
-    public static getInstance() {
+    public static getInstance(manager?: EntityManager) {
         if (!AuthService.service)
             AuthService.service = AuthService._getInstance();
-        return AuthService.service;
+        return AuthService.service._setManager(manager);
     }
 
     private static _getInstance = (): AuthService => new AuthService();
+
+    private _setManager = (manager: EntityManager = getManager()) => {
+        this.repository = manager.getCustomRepository(UserRepository);
+        return this;
+    };
 
     public login = async ({email}) => {
         let error;
