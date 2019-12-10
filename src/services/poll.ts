@@ -57,7 +57,7 @@ export default class PollService {
     public getPolls = async (userEmail: string) => {
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            return await this.repository.find({
+            return await this.mainRepository.find({
                 where: {owner: user},
                 order: {createdAt: 'DESC'},
                 select: ["id", "owner", "room", "state", "title"]
@@ -71,7 +71,7 @@ export default class PollService {
         let error;
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.repository.findOne({
+            const poll = await this.mainRepository.findOne({
                 where: {owner: user, id: pollId},
                 select: ["id", "owner", "room", "state", "title"],
                 relations: ['possibleMeetingTimes', 'owner', 'participants']
@@ -88,7 +88,7 @@ export default class PollService {
         let error;
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 return await ReservationsService.getInstance().getAvailableRooms(meetingTime.startsAt, meetingTime.endsAt);
@@ -107,7 +107,7 @@ export default class PollService {
         let error, user, poll, meetingTime;
         try {
             user = await UserService.getInstance().getUser(userEmail);
-            poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 const result = await ReservationsService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
@@ -173,47 +173,49 @@ export default class PollService {
     };
 
     public selectMeetingTime = async (userEmail: string, pollId: string, {meetingTimeId}) => {
-        let error;
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 0) {
-                await this.repository.manager.transaction(async entityManager => {
-                    await this.repository.update(pollId, {state: 1});
-                    await MeetingTimeService.getInstance().selectMeetingTime(pollId, meetingTimeId);
-                    await QualityInUseService.getInstance().pollChanged(pollId);
-                    await QualityInUseService.getInstance().userEntersPollPage(pollId);
+                await getManager().transaction(async entityManager => {
+                    await this._setManager(entityManager).repository.update(pollId, {state: 1});
+                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
+                    await MeetingTimeService.getInstance(entityManager).selectMeetingTime(pollId, meetingTimeId);
+                    await qualityInUseService.pollChanged(pollId);
+                    await qualityInUseService.userEntersPollPage(pollId);
                 });
                 return {meetingTimeId}
             } else if (poll.state !== 0)
-                error = new InvalidRequestException('Meeting time was selected');
+                throw new InvalidRequestException('Meeting time was selected');
             else
-                error = new ResourceNotFoundException('Poll');
+                throw new ResourceNotFoundException('Poll');
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 
     public removePoll = async (userEmail: string, pollId: string) => {
-        let error;
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
-            if (poll && poll.state < 3) {
-                await this.repository.manager.transaction(async entityManager => {
-                    await this.repository.delete(pollId);
-                    await QualityInUseService.getInstance().pollChanged(pollId);
-                });
-                return;
-            } else if (poll.state === 3)
-                error = new HttpException(400, 'Poll cannot be removed');
-            else error = new ResourceNotFoundException('Poll');
+            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
+            if (poll) {
+                if (poll.state < 3) {
+                    await getManager().transaction(async entityManager => {
+                        await this._setManager(entityManager).repository.delete(pollId);
+                        await QualityInUseService.getInstance(entityManager).pollChanged(pollId);
+                    });
+                    return;
+                }
+                else if (poll.state === 3)
+                    throw new HttpException(400, 'Poll cannot be removed');
+            } else
+                throw new ResourceNotFoundException('Poll');
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 }
