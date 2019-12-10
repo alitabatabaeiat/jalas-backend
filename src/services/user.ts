@@ -1,4 +1,4 @@
-import {EntityManager, getCustomRepository, getManager} from "typeorm";
+import {EntityManager, getManager} from "typeorm";
 import HttpException from "../exceptions/httpException";
 import UserRepository from "../repositories/user";
 import User from "../entities/user";
@@ -8,10 +8,11 @@ import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 
 export default class UserService {
     private static service: UserService;
-    protected repository: UserRepository;
+    private mainRepository: UserRepository;
+    private repository: UserRepository;
 
     private constructor() {
-        this.repository = getCustomRepository(UserRepository);
+        this.mainRepository = getManager().getCustomRepository(UserRepository);
     };
 
     public static getInstance(manager?: EntityManager) {
@@ -28,9 +29,8 @@ export default class UserService {
     };
 
     public createUser = async (user) => {
-        let error;
         try {
-            const userExist = await this.repository.findOne({email: user.email}, {select: ['id']});
+            const userExist = await this.mainRepository.findOne({email: user.email}, {select: ['id']});
             if (!userExist) {
                 let newUser = new User();
                 newUser.email = user.email;
@@ -40,24 +40,25 @@ export default class UserService {
                     accessToken: `Bearer ${user.email}`
                 }
             } else
-                error = new InvalidRequestException(`User with email '${user.email} exists'`);
+                throw new InvalidRequestException(`User with email '${user.email} exists'`);
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 
     public getUser = async (userEmail: string) => {
-        let error;
         try {
-            const user = await this.repository.findOne({email: userEmail}, {select: ['id', 'email']});
+            const user = await this.mainRepository.findOne({email: userEmail}, {select: ['id', 'email']});
             if (user)
                 return user;
             else
-                error = new ResourceNotFoundException(User.name, 'email', userEmail);
+                throw new ResourceNotFoundException(User.name, 'email', userEmail);
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 }

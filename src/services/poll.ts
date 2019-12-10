@@ -63,12 +63,13 @@ export default class PollService {
                 select: ["id", "owner", "room", "state", "title"]
             });
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
     };
 
     public getPoll = async (userEmail: string, pollId: string) => {
-        let error;
         try {
             const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.mainRepository.findOne({
@@ -76,16 +77,18 @@ export default class PollService {
                 select: ["id", "owner", "room", "state", "title"],
                 relations: ['possibleMeetingTimes', 'owner', 'participants']
             });
-            if (poll) return poll;
-            else error = new ResourceNotFoundException('Poll');
+            if (poll)
+                return poll;
+            else
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 
     public getAvailableRooms = async (userEmail: string, pollId: string) => {
-        let error;
         try {
             const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
@@ -93,18 +96,18 @@ export default class PollService {
                 const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 return await ReservationsService.getInstance().getAvailableRooms(meetingTime.startsAt, meetingTime.endsAt);
             } else if (poll.state !== 1)
-                error = new HttpException(401, 'Cannot get rooms for this poll');
-            else error = new ResourceNotFoundException('Poll');
+                throw new InvalidRequestException('First you must select a meeting time');
+            else
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 
     public reserveRoom = async (userEmail: string, pollId: string, {room}) => {
-        let error, user, poll, meetingTime;
+        let user, poll, meetingTime;
         try {
             user = await UserService.getInstance().getUser(userEmail);
             poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
@@ -121,8 +124,9 @@ export default class PollService {
                 this.sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                 return result;
             } else if (poll.state !== 1)
-                error = new HttpException(401, 'Cannot reserve room for this poll');
-            else error = new ResourceNotFoundException('Poll');
+                throw new InvalidRequestException('First you must select a meeting time');
+            else
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
@@ -160,7 +164,6 @@ export default class PollService {
             }
             throw new HttpException();
         }
-        throw error;
     };
 
     private sendRoomReservationUpdateMail = (owner, pollTitle, room, successful) => {
@@ -188,7 +191,7 @@ export default class PollService {
             } else if (poll.state !== 0)
                 throw new InvalidRequestException('Meeting time was selected');
             else
-                throw new ResourceNotFoundException('Poll');
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;
@@ -209,9 +212,9 @@ export default class PollService {
                     return;
                 }
                 else if (poll.state === 3)
-                    throw new HttpException(400, 'Poll cannot be removed');
+                    throw new InvalidRequestException('Poll cannot be removed');
             } else
-                throw new ResourceNotFoundException('Poll');
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;

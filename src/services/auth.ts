@@ -6,9 +6,11 @@ import UserRepository from "../repositories/user";
 
 export default class AuthService {
     private static service: AuthService;
-    protected repository: UserRepository;
+    private mainRepository: UserRepository;
+    private repository: UserRepository;
 
     private constructor() {
+        this.mainRepository = getManager().getCustomRepository(UserRepository);
     };
 
     public static getInstance(manager?: EntityManager) {
@@ -25,19 +27,19 @@ export default class AuthService {
     };
 
     public login = async ({email}) => {
-        let error;
         try {
-            const user = await this.repository.findOne({where: {email}});
+            const user = await this.mainRepository.findOne({where: {email}});
             if (user) {
                 return {
                     message: 'User logged in successfully',
                     accessToken: `Bearer ${email}`
                 }
             } else
-                error = new UnAuthorizedException('Incorrect credential');
+                throw new UnAuthorizedException('Incorrect credential');
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 }
