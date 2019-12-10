@@ -54,18 +54,16 @@ export default class MeetingTimeService {
         }
     };
 
-    public selectMeetingTime = async (pollId, meetingTimeId) => {
+    public updateMeetingTime = async (pollId, meetingTimeId, meetingTime) => {
         try {
-            let meetingTime = await this.repository.findOne({
+            let meetingTimeInDB = await this.repository.findOne({
                 where: {poll: pollId, id: meetingTimeId},
-                select: ['startsAt', 'endsAt', 'voteFor', 'voteAgainst', 'selected']
+                select: ['id', 'startsAt', 'endsAt', 'voteFor', 'voteAgainst', 'selected']
             });
-            if (meetingTime) {
-                if (!meetingTime.selected) {
-                    await this.repository.update(meetingTimeId, {selected: true});
-                    return meetingTime.id;
-                } else
-                    throw new InvalidRequestException('Meeting time was selected');
+            if (meetingTimeInDB) {
+                meetingTime = _.omit(meetingTime, ['id']);
+                await this.repository.update(meetingTimeId, meetingTime);
+                return _.assign(meetingTimeInDB, meetingTime);
             } else
                 throw new ResourceNotFoundException(`Poll with id '${pollId}' not found meetingTime with id '${meetingTimeId}'`);
         } catch (ex) {

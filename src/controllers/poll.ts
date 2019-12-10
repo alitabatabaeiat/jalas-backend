@@ -2,7 +2,7 @@ import Controller from './controller';
 import PollService from '../services/poll';
 import validationMiddleware from "../middlewares/validation";
 import authMiddleware from "../middlewares/auth";
-import {createPollSchema, reserveRoomSchema} from "../validations/poll";
+import {createPollSchema, reserveRoomSchema, selectMeetingTime} from "../validations/poll";
 import {idSchema} from "../validations/common";
 
 export default class PollController extends Controller {
@@ -24,12 +24,12 @@ export default class PollController extends Controller {
             path: '/',
             handlers: [authMiddleware, validationMiddleware({body: createPollSchema}), PollController.createPoll]
         }, {
-            method: 'PUT',
-            path: '/:id',
+            method: 'PATCH',
+            path: '/:id/meeting-times',
             handlers: [authMiddleware, validationMiddleware({
                 params: idSchema(),
-                body: idSchema('meetingTimeId')
-            }), PollController.updatePoll]
+                body: selectMeetingTime
+            }), PollController.updateMeetingTime]
         }, {
             method: 'DELETE',
             path: '/:id',
@@ -78,7 +78,7 @@ export default class PollController extends Controller {
         res.status(201).send(poll);
     };
 
-    private static updatePoll = async (req, res) => {
+    private static updateMeetingTime = async (req, res) => {
         const {user, params, body} = req;
         const response = await PollService.getInstance().selectMeetingTime(user.email, params.id, body);
         res.send(response);

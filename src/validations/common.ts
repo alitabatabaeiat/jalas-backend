@@ -1,7 +1,14 @@
 import Joi from '@hapi/joi';
 
+const rules = {
+    id: Joi.string().guid()
+};
+
 const idSchema = (id = 'id') => Joi.object({
-    [id]: Joi.string().guid().required()
+    [id]: rules.id.required()
 });
 
-export {idSchema};
+export {
+    rules as commonRules,
+    idSchema
+};

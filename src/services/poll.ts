@@ -175,24 +175,30 @@ export default class PollService {
         });
     };
 
-    public selectMeetingTime = async (userEmail: string, pollId: string, {meetingTimeId}) => {
+    public selectMeetingTime = async (userEmail: string, pollId: string, {meetingTime}) => {
+        if (!meetingTime.selected)
+            throw new InvalidRequestException('You cannot deselect meeting time');
         try {
             const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
-            if (poll && poll.state === 0) {
-                await getManager().transaction(async entityManager => {
-                    await this._setManager(entityManager).repository.update(pollId, {state: 1});
-                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
-                    await MeetingTimeService.getInstance(entityManager).selectMeetingTime(pollId, meetingTimeId);
-                    await qualityInUseService.pollChanged(pollId);
-                    await qualityInUseService.userEntersPollPage(pollId);
-                });
-                return {meetingTimeId}
-            } else if (poll.state !== 0)
-                throw new InvalidRequestException('Meeting time was selected');
+            if (poll) {
+                if (poll.state === 0) {
+                    let updatedMeetingTime = null;
+                    await getManager().transaction(async entityManager => {
+                        await this._setManager(entityManager).repository.update(pollId, {state: 1});
+                        const qualityInUseService = QualityInUseService.getInstance(entityManager);
+                        updatedMeetingTime = await MeetingTimeService.getInstance(entityManager).updateMeetingTime(pollId, meetingTime.id, meetingTime);
+                        await qualityInUseService.pollChanged(pollId);
+                        await qualityInUseService.userEntersPollPage(pollId);
+                    });
+                    return updatedMeetingTime;
+                } else
+                    throw new InvalidRequestException('Poll already has a meeting time');
+            }
             else
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
+            console.log(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -211,7 +217,7 @@ export default class PollService {
                     });
                     return;
                 }
-                else if (poll.state === 3)
+                else
                     throw new InvalidRequestException('Poll cannot be removed');
             } else
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
