@@ -110,9 +110,10 @@ export default class PollService {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 const result = await ReservationsService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
                 await this.repository.manager.transaction(async entityManager => {
-                    await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
-                    await QualityInUseService.getInstance().reserveRoom();
-                    await QualityInUseService.getInstance().pollCreated(pollId);
+                    await this._setManager(entityManager).repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
+                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
+                    await qualityInUseService.reserveRoom();
+                    await qualityInUseService.pollCreated(pollId);
                 });
                 this.sendRoomReservationUpdateMail(user, poll.title, room, true);
                 return result;
