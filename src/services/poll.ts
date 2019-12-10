@@ -1,6 +1,5 @@
-import {getCustomRepository} from "typeorm";
+import {EntityManager, getManager} from "typeorm";
 import moment from "moment";
-import _ from 'lodash';
 import PollRepository from "../repositories/poll";
 import Poll from "../entities/poll";
 import MeetingTimeService from "./meetingTime";
@@ -17,16 +16,20 @@ export default class PollService {
     protected repository: PollRepository;
 
     private constructor() {
-        this.repository = getCustomRepository(PollRepository);
     };
 
-    public static getInstance() {
+    public static getInstance(manager?: EntityManager) {
         if (!PollService.service)
             PollService.service = PollService._getInstance();
-        return PollService.service;
+        return PollService.service._setManager(manager);
     }
 
     private static _getInstance = (): PollService => new PollService();
+
+    private _setManager = (manager: EntityManager = getManager()) => {
+        this.repository = manager.getCustomRepository(PollRepository);
+        return this;
+    };
 
     public createPoll = async (ownerEmail: string, poll) => {
         try {
@@ -36,12 +39,10 @@ export default class PollService {
             newPoll.participants = await Promise.all(poll.participants.map(async participant =>
                 await UserService.getInstance().getUser(participant)
             ));
-            await this.repository.manager.transaction(async entityManager => {
-                await this.repository.insert(newPoll);
-                newPoll.possibleMeetingTimes = await Promise.all(poll.possibleMeetingTimes.map(async possibleMeetingTime => {
-                    const meetingTime = await MeetingTimeService.getInstance().createMeetingTime(possibleMeetingTime, newPoll.id);
-                    return _.omit(meetingTime, ['updatedAt', 'createdAt']);
-                }));
+            await getManager().transaction(async entityManager => {
+                await this._setManager(entityManager).repository.save(newPoll);
+                newPoll.possibleMeetingTimes = await MeetingTimeService.getInstance(entityManager)
+                    .createMeetingTime(poll.possibleMeetingTimes, newPoll.id);
             });
             return newPoll;
         } catch (ex) {
@@ -51,8 +52,9 @@ export default class PollService {
         }
     };
 
-    public getPolls = async (user) => {
+    public getPolls = async (userEmail: string) => {
         try {
+            const user = await UserService.getInstance().getUser(userEmail);
             return await this.repository.find({
                 where: {owner: user},
                 order: {createdAt: 'DESC'},
@@ -63,9 +65,10 @@ export default class PollService {
         }
     };
 
-    public getPoll = async (user, pollId) => {
+    public getPoll = async (userEmail: string, pollId: string) => {
         let error;
         try {
+            const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.repository.findOne({
                 where: {owner: user, id: pollId},
                 select: ["id", "owner", "room", "state", "title"],
@@ -79,9 +82,10 @@ export default class PollService {
         throw error;
     };
 
-    public getAvailableRooms = async (user, pollId) => {
+    public getAvailableRooms = async (userEmail: string, pollId: string) => {
         let error;
         try {
+            const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
@@ -97,9 +101,10 @@ export default class PollService {
         throw error;
     };
 
-    public reserveRoom = async (user, pollId, {room}) => {
-        let error, poll, meetingTime, result;
+    public reserveRoom = async (userEmail: string, pollId: string, {room}) => {
+        let error, user, poll, meetingTime;
         try {
+            user = await UserService.getInstance().getUser(userEmail);
             poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
@@ -162,9 +167,10 @@ export default class PollService {
         });
     };
 
-    public selectMeetingTime = async (user, pollId, {meetingTimeId}) => {
+    public selectMeetingTime = async (userEmail: string, pollId: string, {meetingTimeId}) => {
         let error;
         try {
+            const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 0) {
                 await this.repository.manager.transaction(async entityManager => {
@@ -186,9 +192,10 @@ export default class PollService {
         throw error;
     };
 
-    public removePoll = async (user, pollId) => {
+    public removePoll = async (userEmail: string, pollId: string) => {
         let error;
         try {
+            const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state < 3) {
                 await this.repository.manager.transaction(async entityManager => {

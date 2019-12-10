@@ -1,4 +1,4 @@
-import {getCustomRepository} from "typeorm";
+import {EntityManager, getCustomRepository, getManager} from "typeorm";
 import moment from "moment";
 import HttpException from "../exceptions/httpException";
 import QualityInUseRepository from "../repositories/qualityInUse";
@@ -9,14 +9,18 @@ export default class QualityInUseService {
     protected repository: QualityInUseRepository;
 
     private constructor() {
-        this.repository = getCustomRepository(QualityInUseRepository);
     };
 
-    public static getInstance() {
+    public static getInstance(manager?: EntityManager) {
         if (!QualityInUseService.service)
             QualityInUseService.service = QualityInUseService._getInstance();
-        return QualityInUseService.service;
+        return QualityInUseService.service._setManager(manager);
     }
+
+    private _setManager = (manager: EntityManager = getManager()) => {
+        this.repository = manager.getCustomRepository(QualityInUseRepository);
+        return this;
+    };
 
     private static _getInstance = (): QualityInUseService => new QualityInUseService();
 

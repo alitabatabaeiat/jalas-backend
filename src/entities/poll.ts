@@ -24,7 +24,7 @@ export default class Poll extends BaseEntity {
     @JoinColumn({name: 'owner_id'})
     public owner: User;
 
-    @ManyToMany(type => User)
+    @ManyToMany(type => User, {cascade: true})
     @JoinTable({
         name: 'polls_participants',
         joinColumn: {

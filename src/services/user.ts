@@ -1,4 +1,4 @@
-import {getCustomRepository} from "typeorm";
+import {EntityManager, getCustomRepository, getManager} from "typeorm";
 import HttpException from "../exceptions/httpException";
 import UserRepository from "../repositories/user";
 import User from "../entities/user";
@@ -14,13 +14,18 @@ export default class UserService {
         this.repository = getCustomRepository(UserRepository);
     };
 
-    public static getInstance() {
+    public static getInstance(manager?: EntityManager) {
         if (!UserService.service)
             UserService.service = UserService._getInstance();
-        return UserService.service;
+        return UserService.service._setManager(manager);
     }
 
     private static _getInstance = (): UserService => new UserService();
+
+    private _setManager = (manager: EntityManager = getManager()) => {
+        this.repository = manager.getCustomRepository(UserRepository);
+        return this;
+    };
 
     public createUser = async (user) => {
         let error;
