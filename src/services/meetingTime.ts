@@ -8,9 +8,11 @@ import InvalidRequestException from "../exceptions/invalidRequestException";
 
 export default class MeetingTimeService {
     private static service: MeetingTimeService;
-    protected repository: MeetingTimeRepository;
+    private mainRepository: MeetingTimeRepository;
+    private repository: MeetingTimeRepository;
 
     private constructor() {
+        this.mainRepository = getManager().getCustomRepository(MeetingTimeRepository);
     };
 
     public static getInstance(manager?: EntityManager) {
@@ -46,33 +48,34 @@ export default class MeetingTimeService {
             } else
                 return [];
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
     };
 
     public selectMeetingTime = async (pollId, meetingTimeId) => {
-        let error;
         try {
             let meetingTime = await this.repository.findOne({
                 where: {poll: pollId, id: meetingTimeId},
-                select: ['selected']
+                select: ['startsAt', 'endsAt', 'voteFor', 'voteAgainst', 'selected']
             });
             if (meetingTime) {
                 if (!meetingTime.selected) {
                     await this.repository.update(meetingTimeId, {selected: true});
                     return meetingTime.id;
                 } else
-                    error = new InvalidRequestException('Meeting time was selected');
+                    throw new InvalidRequestException('Meeting time was selected');
             } else
-                error = new ResourceNotFoundException('MeetingTime');
+                throw new ResourceNotFoundException(`Poll with id '${pollId}' not found meetingTime with id '${meetingTimeId}'`);
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 
     public getSelectedMeetingTime = async (pollId) => {
-        let error;
         try {
             let meetingTime = await this.repository.findOne({
                 where: {poll: pollId, selected: true},
@@ -81,10 +84,11 @@ export default class MeetingTimeService {
             if (meetingTime)
                 return meetingTime;
             else
-                error = new InvalidRequestException('There is no selected meeting time');
+                throw new InvalidRequestException('There is no selected meeting time');
         } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
             throw new HttpException();
         }
-        throw error;
     };
 }
