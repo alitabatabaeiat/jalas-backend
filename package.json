@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=dev ts-node ./src/server.ts",
-    "watch": "NODE_ENV=dev nodemon -e ts -w ./src -x npm run watch:serve",
+    "dev": "ts-node ./src/server.ts",
+    "watch": "nodemon -e ts -w ./src -x npm run watch:serve",
     "watch:serve": "node --inspect -r ts-node/register src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
+    "build": "node node_modules/typescript/bin/tsc",
     "clean": "rm -rf ./dist/* "
   },
   "repository": {
@@ -28,6 +28,7 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "googleapis": "^45.0.0",
+    "lodash": "^4.17.15",
     "moment-timezone": "^0.5.27",
     "nodemailer": "^6.3.1",
     "pg": "^7.14.0",

@@ -28,7 +28,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
     env_file:
-      - ./db/docker.env
+      - db/.env
 
 volumes:
   pg-data:

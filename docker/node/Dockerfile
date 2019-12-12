@@ -12,5 +12,4 @@ COPY --from=builder ./app/dist ./dist
 COPY package* ./
 COPY .env.prod ./
 RUN npm install --production
-ENV NODE_ENV=prod
 CMD pm2-runtime ./dist/server.js
