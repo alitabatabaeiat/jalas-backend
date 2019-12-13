@@ -10,6 +10,6 @@ WORKDIR /app
 RUN npm install -g pm2
 COPY --from=builder ./app/dist ./dist
 COPY package* ./
-COPY .env.prod ./
+COPY .env ./
 RUN npm install --production
 CMD pm2-runtime ./dist/server.js
