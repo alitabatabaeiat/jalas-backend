@@ -72,15 +72,17 @@ export default class PollService {
 
     public getPoll = async (userEmail: string, pollId: string) => {
         try {
-            const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.mainRepository.findOne({
-                where: {owner: user, id: pollId},
-                select: ["id", "owner", "room", "state", "title"],
-                relations: ['possibleMeetingTimes', 'owner', 'participants']
-            });
-            if (poll)
+            const poll = await this.mainRepository.findOneThatUserParticipateOnIt(pollId, userEmail);
+            if (poll && poll.owner.email === userEmail) {
+                poll.possibleMeetingTimes.forEach(meetingTime =>
+                    _.remove(meetingTime.votes, vote => {
+                        const mustRemove = !vote.voter;
+                        delete vote.voter;
+                        return mustRemove
+                    })
+                );
                 return poll;
-            else
+            } else
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
             if (ex instanceof HttpException)
