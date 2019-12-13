@@ -39,18 +39,21 @@ export default class MailService {
         }
     });
 
-    public sendMail = async (to: string, subject: string, message: string) => {
-        return await this._smtpTransport.sendMail({
+    public sendMail = (to: string | string[], subject: string, message: string) => {
+        this._smtpTransport.sendMail({
             from: process.env.EMAIL_ADDRESS,
             to, subject, text: message
         });
     };
 
-    public sendRoomReservationUpdateMail = async (to, pollTitle, room, successful) => {
-        try {
-            await MailService.getInstance().sendMail(to, `Reservation state changed(${pollTitle})`,
-                `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`);
-        } catch (ex) {
-        }
-    }
+    public sendRoomReservationUpdateMail = (to: string, pollTitle: string, room: number, successful: boolean) => {
+        this.sendMail(to, `Reservation state changed(${pollTitle})`,
+            `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`);
+    };
+
+    public sendPollURL = (to: string[], pollId: string, pollTitle: string) => {
+        this.sendMail(to, `Poll For meeting '${pollTitle}'`,
+            `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.
+localhost:3000/polls/${pollId}`)
+    };
 };
