@@ -14,7 +14,6 @@ cache:
 install dependencies:
   stage: build
   script:
-    - echo $ENV
     - npm install
   environment:
     name: test
@@ -24,7 +23,6 @@ install dependencies:
 unit test:
   stage: unit test
   script:
-    - echo $ENV
     - echo run unit tests in this section
   environment:
     name: test
@@ -48,7 +46,6 @@ deploy project:
   only:
     - master
   script:
-    - cat `echo $ENV`
     - cat `echo $ENV` > .env
     - cd docker
     - docker-compose build --no-cache
