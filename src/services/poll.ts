@@ -7,10 +7,10 @@ import MeetingTimeService from "./meetingTime";
 import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 import HttpException from "../exceptions/httpException";
 import ReservationsService from "./reservation";
-import {sendMail} from "../utilities/mail";
 import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
+import MailService from "./mail";
 
 export default class PollService {
     private static service: PollService;
@@ -47,6 +47,7 @@ export default class PollService {
                 newPoll.possibleMeetingTimes = await MeetingTimeService.getInstance(entityManager)
                     .createMeetingTime(poll.possibleMeetingTimes, newPoll.id);
             });
+            MailService.getInstance().sendPollURL([ownerEmail, ...poll.participants], newPoll.id, poll.title);
             return newPoll;
         } catch (ex) {
             if (ex instanceof HttpException)
@@ -128,7 +129,7 @@ export default class PollService {
                     await qualityInUseService.pollCreated(pollId);
                     throw new HttpException(503);
                 });
-                this.sendRoomReservationUpdateMail(user.email, poll.title, room, true);
+                MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                 return result;
             } else if (poll.state !== 1)
                 throw new InvalidRequestException('First you must select a meeting time');
@@ -157,12 +158,12 @@ export default class PollService {
                                     await qualityInUseService.reserveRoom();
                                     await qualityInUseService.pollCreated(pollId);
                                 });
-                                this.sendRoomReservationUpdateMail(user.email, poll.title, room, true);
+                                MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                             } else if (status === 400) {
                                 clearInterval(interval);
                                 interval = null;
                                 await this.mainRepository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
-                                this.sendRoomReservationUpdateMail(user.email, poll.title, room, false);
+                                MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, false);
                             }
                         }
                     }, 1000);
@@ -173,21 +174,12 @@ export default class PollService {
         }
     };
 
-    private sendRoomReservationUpdateMail = (owner, pollTitle, room, successful) => {
-        sendMail({
-            from: `Jalas <${process.env.EMAIL_ADDRESS}>`,
-            to: owner,
-            subject: `Reservation state changed(${pollTitle})`,
-            text: `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`
-        });
-    };
-
     public selectMeetingTime = async (userEmail: string, pollId: string, {meetingTime}) => {
         if (!meetingTime.selected)
             throw new InvalidRequestException('You cannot deselect meeting time');
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
+            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}, relations: ['participants']});
             if (poll) {
                 if (poll.state === 0) {
                     let updatedMeetingTime = null;
@@ -198,12 +190,14 @@ export default class PollService {
                         await qualityInUseService.pollChanged(pollId);
                         await qualityInUseService.userEntersPollPage(pollId);
                     });
+                    MailService.getInstance().sendPollURL([userEmail, ...poll.participants.map(p => p.email)], poll.id, poll.title);
                     return updatedMeetingTime;
                 } else
                     throw new InvalidRequestException('Poll already has a meeting time');
             } else
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
+            console.log(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
