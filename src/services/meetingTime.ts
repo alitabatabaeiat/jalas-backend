@@ -5,6 +5,7 @@ import HttpException from "../exceptions/httpException";
 import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 import MeetingTime from "../entities/meetingTime";
 import InvalidRequestException from "../exceptions/invalidRequestException";
+import VoteService from "./vote";
 
 export default class MeetingTimeService {
     private static service: MeetingTimeService;
@@ -89,4 +90,40 @@ export default class MeetingTimeService {
             throw new HttpException();
         }
     };
+
+    public saveVote = async (meetingTime, vote) => {
+        try {
+            if (meetingTime.votes.length > 0) {
+                if (vote.voteFor !== meetingTime.votes[0].voteFor) {
+                    if (vote.voteFor) {
+                        meetingTime.voteFor += 1;
+                        meetingTime.voteAgainst -= 1;
+                    } else {
+                        meetingTime.voteFor -= 1;
+                        meetingTime.voteAgainst += 1;
+                    }
+                    meetingTime.votes[0].voteFor = !meetingTime.votes[0].voteFor;
+                } else
+                    return meetingTime;
+            } else if (vote.voteFor)
+                meetingTime.voteFor += 1;
+            else
+                meetingTime.voteAgainst += 1;
+            const updatedMeetingTime = _.omit(meetingTime, ['id', 'votes']);
+            await getManager().transaction(async entityManager => {
+                await this.repository.update(meetingTime.id, updatedMeetingTime);
+                const voteService = VoteService.getInstance(entityManager);
+                if (meetingTime.votes.length > 0)
+                    meetingTime.votes[0] = await voteService.updateVote(meetingTime.votes[0]);
+                else
+                    meetingTime.votes[0] = await voteService.insertVote(vote);
+            });
+            return meetingTime;
+        } catch (ex) {
+            console.log(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
 }

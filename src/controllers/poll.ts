@@ -2,7 +2,7 @@ import Controller from './controller';
 import PollService from '../services/poll';
 import validationMiddleware from "../middlewares/validation";
 import authMiddleware from "../middlewares/auth";
-import {createPollSchema, reserveRoomSchema, selectMeetingTime} from "../validations/poll";
+import {createPollSchema, reserveRoomSchema, selectMeetingTime, voteMeetingTime} from "../validations/poll";
 import {idSchema} from "../validations/common";
 
 export default class PollController extends Controller {
@@ -24,6 +24,10 @@ export default class PollController extends Controller {
             path: '/',
             handlers: [authMiddleware, validationMiddleware({body: createPollSchema}), PollController.createPoll]
         }, {
+            method: 'DELETE',
+            path: '/:id',
+            handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.removePoll]
+        }, {
             method: 'PATCH',
             path: '/:id/meeting-times',
             handlers: [authMiddleware, validationMiddleware({
@@ -31,9 +35,12 @@ export default class PollController extends Controller {
                 body: selectMeetingTime
             }), PollController.updateMeetingTime]
         }, {
-            method: 'DELETE',
-            path: '/:id',
-            handlers: [authMiddleware, validationMiddleware({params: idSchema()}), PollController.removePoll]
+            method: 'POST',
+            path: '/:id/votes',
+            handlers: [authMiddleware, validationMiddleware({
+                params: idSchema(),
+                body: voteMeetingTime
+            }), PollController.voteMeetingTime]
         }, {
             method: 'GET',
             path: '/:id/rooms',
@@ -82,7 +89,13 @@ export default class PollController extends Controller {
         const {user, params, body} = req;
         const response = await PollService.getInstance().selectMeetingTime(user.email, params.id, body);
         res.send(response);
-    }
+    };
+
+    private static voteMeetingTime = async (req, res) => {
+        const {user, params, body} = req;
+        const response = await PollService.getInstance().voteMeetingTime(user.email, params.id, body);
+        res.send(response);
+    };
 
     private static removePoll = async (req, res) => {
         const {user, params} = req;

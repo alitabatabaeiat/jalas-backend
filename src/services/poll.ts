@@ -115,7 +115,11 @@ export default class PollService {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 const result = await ReservationsService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
                 await getManager().transaction(async entityManager => {
-                    await this._setManager(entityManager).repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
+                    await this._setManager(entityManager).repository.update(pollId, {
+                        state: 3,
+                        room,
+                        roomRequestedAt: moment().toISOString()
+                    });
                     const qualityInUseService = QualityInUseService.getInstance(entityManager);
                     await qualityInUseService.reserveRoom();
                     await qualityInUseService.pollCreated(pollId);
@@ -194,9 +198,29 @@ export default class PollService {
                     return updatedMeetingTime;
                 } else
                     throw new InvalidRequestException('Poll already has a meeting time');
-            }
-            else
+            } else
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+        } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    };
+
+    public voteMeetingTime = async (userEmail: string, pollId: string, {vote}) => {
+        try {
+            const poll = await this.mainRepository.findOneThatUserParticipateOnItWithMeetingTimeVote(pollId, userEmail, vote.meetingTimeId);
+            if (poll && poll.state === 0 && (poll.owner || poll.participants.length > 0) && poll.possibleMeetingTimes.length > 0) {
+                vote.voter = poll.owner || poll.participants[0];
+                return await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
+            } else if (!poll)
+                throw new ResourceNotFoundException('Poll');
+            else if (poll.state > 0)
+                throw new InvalidRequestException('A meeting time has been set for poll');
+            else if (!(poll.owner || poll.participants.length > 0))
+                throw new InvalidRequestException(`You're not owner or a participant of poll`);
+            else if (poll.possibleMeetingTimes.length === 0)
+                throw new InvalidRequestException(`There is no meetingTime with id '${vote.meetingTimeId}' for poll`);
         } catch (ex) {
             console.log(ex);
             if (ex instanceof HttpException)
@@ -216,8 +240,7 @@ export default class PollService {
                         await QualityInUseService.getInstance(entityManager).pollChanged(pollId);
                     });
                     return;
-                }
-                else
+                } else
                     throw new InvalidRequestException('Poll cannot be removed');
             } else
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);

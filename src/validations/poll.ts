@@ -11,6 +11,9 @@ const rules = {
         endsAt: Joi.date().iso(),
         selected: Joi.boolean()
     },
+    vote: {
+        voteFor: Joi.boolean()
+    },
     participants: Joi.array().items(Joi.string().email()).min(1)
 };
 
@@ -29,11 +32,18 @@ const selectMeetingTime = Joi.object({
     meetingTime: Joi.object({
         id: commonRules.id.required(),
         selected: rules.meetingTimes.selected.required()
-    }).required(),
+    }).required()
+});
+
+const voteMeetingTime = Joi.object({
+    vote: Joi.object({
+        meetingTimeId: commonRules.id.required(),
+        voteFor: rules.vote.voteFor.required()
+    }).required()
 });
 
 const reserveRoomSchema = Joi.object({
     room: rules.room.required()
 });
 
-export {createPollSchema, selectMeetingTime, reserveRoomSchema};
+export {createPollSchema, selectMeetingTime, voteMeetingTime, reserveRoomSchema};
