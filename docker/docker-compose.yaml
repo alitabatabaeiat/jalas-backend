@@ -11,25 +11,7 @@ services:
       - node
 
   node:
-    links:
-      - db:db
     container_name: jalas-node
     build:
       context: ../
       dockerfile: docker/node/Dockerfile
-    volumes:
-      - pg-data:/var/lib/postgresql/data
-    depends_on:
-      - db
-
-  db:
-    container_name: jalas-db
-    build: ./db
-    volumes:
-      - pg-data:/var/lib/postgresql/data
-    env_file:
-      - db/.env
-
-volumes:
-  pg-data:
-    driver: local
