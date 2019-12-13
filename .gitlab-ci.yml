@@ -17,7 +17,7 @@ install dependencies:
     - echo $ENV
     - npm install
   environment:
-    name: dev
+    name: test
   tags:
     - docker
 
@@ -27,7 +27,7 @@ unit test:
     - echo $ENV
     - echo run unit tests in this section
   environment:
-    name: dev
+    name: test
   tags:
     - docker
 
@@ -36,7 +36,7 @@ integration test:
   script:
     - echo run integration tests in this section
   environment:
-    name: dev
+    name: test
   tags:
     - docker
 
