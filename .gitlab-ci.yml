@@ -49,7 +49,7 @@ deploy project:
     - master
   script:
     - cat `echo $ENV`
-    - cat `echo $ENV` > .env.prod
+    - cat `echo $ENV` > .env
     - cat `echo $POSTGRES_ENV` > docker/db/docker.env
     - cd docker
     - docker-compose build --no-cache
