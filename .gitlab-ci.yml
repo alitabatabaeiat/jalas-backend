@@ -1,0 +1,58 @@
+image: node:12.3.1-alpine
+
+stages:
+  - build
+  - unit test
+  - integration test
+  - deploy
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+
+install dependencies:
+  stage: build
+  script:
+    - npm install
+  environment:
+    name: test
+  tags:
+    - docker
+
+unit test:
+  stage: unit test
+  script:
+    - echo run unit tests in this section
+  environment:
+    name: test
+  tags:
+    - docker
+
+integration test:
+  stage: integration test
+  script:
+    - echo run integration tests in this section
+  environment:
+    name: test
+  tags:
+    - docker
+
+deploy project:
+  image: docker/compose
+  services:
+    - docker:dind
+  stage: deploy
+  only:
+    - master
+  script:
+    - cat `echo $ENV` > .env
+    - cd docker
+    - docker-compose build --no-cache
+    - docker-compose up -d
+  cache: {}
+  environment:
+    name: production
+    url: http://198.143.180.25
+  tags:
+    - deploy

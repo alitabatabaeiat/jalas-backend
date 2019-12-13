@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config({path: `${__dirname}/../.env.${process.env.NODE_ENV}`});
+import 'dotenv/config';
 import 'reflect-metadata';
 import {createConnection} from "typeorm";
 
