@@ -1,5 +1,6 @@
 import {EntityManager, getManager} from "typeorm";
 import moment from "moment";
+import _ from "lodash";
 import PollRepository from "../repositories/poll";
 import Poll from "../entities/poll";
 import MeetingTimeService from "./meetingTime";
@@ -211,6 +212,8 @@ export default class PollService {
         try {
             const poll = await this.mainRepository.findOneThatUserParticipateOnItWithMeetingTimeVote(pollId, userEmail, vote.meetingTimeId);
             if (poll && poll.state === 0 && (poll.owner || poll.participants.length > 0) && poll.possibleMeetingTimes.length > 0) {
+                _.remove(poll.possibleMeetingTimes[0].votes, vote => !vote.voter);
+                poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
                 vote.voter = poll.owner || poll.participants[0];
                 return await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
             } else if (!poll)

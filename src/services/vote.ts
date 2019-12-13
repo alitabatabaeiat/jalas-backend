@@ -32,7 +32,7 @@ export default class VoteService {
             const newVote = new Vote();
             newVote.voteFor = vote.voteFor;
             newVote.meetingTime = vote.meetingTimeId;
-            newVote.voter = vote.voterId;
+            newVote.voter = vote.voter;
             await this.repository.insert(newVote);
             return _.pick(newVote, ['id', 'voteFor']);
         } catch (ex) {
@@ -46,7 +46,7 @@ export default class VoteService {
         try {
             const updatedVote = _.pick(vote, ['voteFor']);
             await this.repository.update(vote.id, updatedVote);
-            return _.omit(vote, ['updatedAt', 'createdAt']);
+            return _.pick(vote, ['id', 'voteFor']);
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;
