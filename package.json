@@ -8,7 +8,7 @@
     "watch": "nodemon -e ts -w ./src -x npm run watch:serve",
     "watch:serve": "node --inspect -r ts-node/register src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node node_modules/typescript/bin/tsc",
+    "build": "node --max_old_space_size=1024 node_modules/typescript/bin/tsc",
     "clean": "rm -rf ./dist/* "
   },
   "repository": {
