@@ -4,7 +4,7 @@ import HttpException from "../exceptions/httpException";
 
 export default class ReservationService {
     private static service: ReservationService;
-    private readonly baseURL: string = 'http://213.233.176.40';
+    private readonly baseURL: string = process.env.RESERVATION_SERVICE_URL;
 
     private constructor() {
     };

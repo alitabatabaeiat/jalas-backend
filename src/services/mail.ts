@@ -53,7 +53,8 @@ export default class MailService {
 
     public sendPollURL = (to: string[], pollId: string, pollTitle: string) => {
         this.sendMail(to, `Poll For meeting '${pollTitle}'`,
-            `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.
-localhost:3000/polls/${pollId}`)
+            `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.` +
+            `${process.env.FRONTEND_URL}/polls/${pollId}`
+        );
     };
 };

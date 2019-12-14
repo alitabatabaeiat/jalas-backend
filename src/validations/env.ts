@@ -7,6 +7,8 @@ const envSchema = Joi.object({
     POSTGRES_USER: Joi.string().required(),
     POSTGRES_PASSWORD: Joi.string().required(),
     POSTGRES_DB: Joi.string().required(),
+    RESERVATION_SERVICE_URL: Joi.string().uri().required(),
+    FRONTEND_URL: Joi.string().uri().required(),
     EMAIL_SERVICE: Joi.string().required(),
     EMAIL_ADDRESS: Joi.string().email().required(),
     EMAIL_PASSWORD: Joi.string().required(),
