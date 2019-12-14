@@ -99,10 +99,10 @@ export default class PollService {
             if (poll && poll.state === 1) {
                 const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 return await ReservationService.getInstance().getAvailableRooms(meetingTime.startsAt, meetingTime.endsAt);
-            } else if (poll.state !== 1)
-                throw new InvalidRequestException('First you must select a meeting time');
-            else
+            } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+            else if (poll.state !== 1)
+                throw new InvalidRequestException('First you must select a meeting time');
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;
@@ -131,10 +131,10 @@ export default class PollService {
                 });
                 MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                 return result;
-            } else if (poll.state !== 1)
-                throw new InvalidRequestException('First you must select a meeting time');
-            else
+            } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+            else if (poll.state !== 1)
+                throw new InvalidRequestException('First you must select a meeting time');
         } catch (ex) {
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
@@ -179,23 +179,25 @@ export default class PollService {
             throw new InvalidRequestException('You cannot deselect meeting time');
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}, relations: ['participants']});
-            if (poll) {
-                if (poll.state === 0) {
-                    let updatedMeetingTime = null;
-                    await getManager().transaction(async entityManager => {
-                        await this._setManager(entityManager).repository.update(pollId, {state: 1});
-                        const qualityInUseService = QualityInUseService.getInstance(entityManager);
-                        updatedMeetingTime = await MeetingTimeService.getInstance(entityManager).updateMeetingTime(pollId, meetingTime.id, meetingTime);
-                        await qualityInUseService.pollChanged(pollId);
-                        await qualityInUseService.userEntersPollPage(pollId);
-                    });
-                    MailService.getInstance().sendPollURL([userEmail, ...poll.participants.map(p => p.email)], poll.id, poll.title);
-                    return updatedMeetingTime;
-                } else
-                    throw new InvalidRequestException('Poll already has a meeting time');
-            } else
+            const poll = await this.mainRepository.findOne({
+                where: {owner: user, id: pollId},
+                relations: ['participants']
+            });
+            if (poll && poll.state === 0) {
+                let updatedMeetingTime = null;
+                await getManager().transaction(async entityManager => {
+                    await this._setManager(entityManager).repository.update(pollId, {state: 1});
+                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
+                    updatedMeetingTime = await MeetingTimeService.getInstance(entityManager).updateMeetingTime(pollId, meetingTime.id, meetingTime);
+                    await qualityInUseService.pollChanged(pollId);
+                    await qualityInUseService.userEntersPollPage(pollId);
+                });
+                MailService.getInstance().sendPollURL([userEmail, ...poll.participants.map(p => p.email)], poll.id, poll.title);
+                return updatedMeetingTime;
+            } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+            else if (poll.state > 0)
+                throw new InvalidRequestException('Poll already has a meeting time');
         } catch (ex) {
             console.log(ex);
             if (ex instanceof HttpException)
@@ -232,17 +234,17 @@ export default class PollService {
         try {
             const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
-            if (poll) {
-                if (poll.state < 3) {
+            if (poll && poll.state < 3) {
                     await getManager().transaction(async entityManager => {
                         await this._setManager(entityManager).repository.delete(pollId);
                         await QualityInUseService.getInstance(entityManager).pollChanged(pollId);
                     });
                     return;
-                } else
-                    throw new InvalidRequestException('Poll cannot be removed');
-            } else
+
+            } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+            else if (poll.state === 3)
+                throw new InvalidRequestException('Poll cannot be removed');
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;
