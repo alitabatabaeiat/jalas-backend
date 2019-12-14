@@ -2,20 +2,20 @@ import axios from 'axios';
 import moment from "moment-timezone";
 import HttpException from "../exceptions/httpException";
 
-export default class ReservationsService {
-    private static service: ReservationsService;
+export default class ReservationService {
+    private static service: ReservationService;
     private readonly baseURL: string = 'http://213.233.176.40';
 
     private constructor() {
     };
 
     public static getInstance() {
-        if (!ReservationsService.service)
-            ReservationsService.service = ReservationsService._getInstance();
-        return ReservationsService.service;
+        if (!ReservationService.service)
+            ReservationService.service = ReservationService._getInstance();
+        return ReservationService.service;
     }
 
-    private static _getInstance = (): ReservationsService => new ReservationsService();
+    private static _getInstance = (): ReservationService => new ReservationService();
 
     public getAvailableRooms = async (start: Date, end: Date) => {
         try {
