@@ -9,7 +9,7 @@
     "watch:serve": "node --inspect -r ts-node/register src/server.ts",
     "test": "jest -c jest.config.js",
     "test:unit": "jest -c jest.config.unit.js",
-    "test:integration": "jest -c --passWithNoTests jest.config.integration.js",
+    "test:integration": "jest -c jest.config.integration.js",
     "build": "node --max_old_space_size=1024 node_modules/typescript/bin/tsc",
     "clean": "rm -rf ./dist/* "
   },

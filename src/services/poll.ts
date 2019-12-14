@@ -6,7 +6,7 @@ import Poll from "../entities/poll";
 import MeetingTimeService from "./meetingTime";
 import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 import HttpException from "../exceptions/httpException";
-import ReservationsService from "./reservation";
+import ReservationService from "./reservation";
 import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
@@ -98,7 +98,7 @@ export default class PollService {
             const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
-                return await ReservationsService.getInstance().getAvailableRooms(meetingTime.startsAt, meetingTime.endsAt);
+                return await ReservationService.getInstance().getAvailableRooms(meetingTime.startsAt, meetingTime.endsAt);
             } else if (poll.state !== 1)
                 throw new InvalidRequestException('First you must select a meeting time');
             else
@@ -117,7 +117,7 @@ export default class PollService {
             poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
-                const result = await ReservationsService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
+                const result = await ReservationService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
                 await getManager().transaction(async entityManager => {
                     await this._setManager(entityManager).repository.update(pollId, {
                         state: 3,
@@ -143,7 +143,7 @@ export default class PollService {
                     let interval = setInterval(async () => {
                         let status;
                         try {
-                            await ReservationsService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
+                            await ReservationService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
                             status = 200;
                         } catch (ex) {
                             status = ex.status;
