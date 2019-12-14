@@ -17,7 +17,7 @@ describe('auth middleware', () => {
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.send).toHaveBeenCalledWith({
             status: 500,
-            message: 'Internal server error'
+            message: 'Something went wrong'
         });
     });
 });
