@@ -9,7 +9,11 @@ import PollController from "./controllers/poll";
 import AuthController from "./controllers/auth";
 import QualityInUseController from "./controllers/qualityInUse";
 import UserService from "./services/user";
+import winston from "winston";
 
+process.on('unhandledRejection', ex => {
+    throw ex
+});
 
 (async () => {
     try {
@@ -19,6 +23,7 @@ import UserService from "./services/user";
             process.exit(1);
         }
         await createConnection(config);
+        winston.info(`Connected to database...`);
         try {
             await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com'});
             await UserService.getInstance().createUser({email: 'h.ghadimi1998@gmail.com'});
@@ -38,7 +43,7 @@ import UserService from "./services/user";
         const app = new App(controllers);
         app.listen();
     } catch (error) {
-        console.log('Error while connecting to the database', error);
+        winston.error('Error while connecting to the database');
         return error;
     }
 })();
