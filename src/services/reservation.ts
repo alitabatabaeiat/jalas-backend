@@ -1,6 +1,7 @@
 import axios from 'axios';
 import moment from "moment-timezone";
 import HttpException from "../exceptions/httpException";
+import winston from "winston";
 
 export default class ReservationService {
     private static service: ReservationService;
@@ -28,6 +29,7 @@ export default class ReservationService {
             });
             return data;
         } catch (ex) {
+            winston.error(ex);
             throw new HttpException(503, 'Reservation service unavailable')
         }
     };
@@ -43,6 +45,7 @@ export default class ReservationService {
             });
             return data;
         } catch (ex) {
+            winston.error(ex);
             if (ex.response && (ex.response.status === 400 || ex.response.status === 404))
                 throw new HttpException(ex.response.status, ex.response.data.message);
             throw new HttpException(503, 'Reservation service unavailable')

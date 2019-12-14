@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import winston from 'winston';
 import Controller from "./controllers/controller";
 import notFoundMiddleware from "./middlewares/notFound";
 import errorMiddleware from "./middlewares/error";
@@ -13,6 +14,7 @@ class App {
         this.initializeMiddleware();
         this.initializeControllers(controllers);
         this.initializeErrorHandling();
+        this.initializeWinston();
     }
 
     private initializeMiddleware() {
@@ -30,11 +32,17 @@ class App {
         this.app.use(errorMiddleware);
     }
 
+    private initializeWinston() {
+        winston.add(new winston.transports.File({ filename: 'logfile.log' }));
+        winston.exceptions.handle(
+            new winston.transports.File({ filename: 'uncaughtExceptions.log' }),
+            new winston.transports.Console()
+        );
+    }
+
     public listen() {
         const port = process.env.PORT;
-        this.app.listen(port, () => {
-            console.log(`App listening on the port ${port}`);
-        });
+        this.app.listen(port, () => winston.info('App started successfully'));
     }
 }
 
