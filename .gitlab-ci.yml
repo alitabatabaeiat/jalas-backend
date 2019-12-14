@@ -23,7 +23,7 @@ install dependencies:
 unit test:
   stage: unit test
   script:
-    - echo run unit tests in this section
+    - npm test
   environment:
     name: test
   tags:
