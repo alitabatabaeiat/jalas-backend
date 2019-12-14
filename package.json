@@ -7,7 +7,7 @@
     "dev": "ts-node ./src/server.ts",
     "watch": "nodemon -e ts -w ./src -x npm run watch:serve",
     "watch:serve": "node --inspect -r ts-node/register src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "node --max_old_space_size=1024 node_modules/typescript/bin/tsc",
     "clean": "rm -rf ./dist/* "
   },
@@ -34,13 +34,23 @@
     "pg": "^7.14.0",
     "reflect-metadata": "^0.1.13",
     "ts-node": "^8.5.2",
-    "typeorm": "^0.2.20",
-    "typescript": "^3.7.2"
+    "typeorm": "^0.2.20"
   },
   "devDependencies": {
     "@types/express": "^4.17.2",
+    "@types/jest": "^24.0.23",
     "@types/joi": "^14.3.4",
     "@types/lodash": "^4.14.149",
-    "@types/moment-timezone": "^0.5.12"
+    "@types/moment-timezone": "^0.5.12",
+    "@types/supertest": "^2.0.8",
+    "jest": "^24.9.0",
+    "supertest": "^4.0.2",
+    "ts-jest": "^24.2.0",
+    "typescript": "^3.7.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": ["/node_modules/"]
   }
 }
