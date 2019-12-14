@@ -7,7 +7,9 @@
     "dev": "ts-node ./src/server.ts",
     "watch": "nodemon -e ts -w ./src -x npm run watch:serve",
     "watch:serve": "node --inspect -r ts-node/register src/server.ts",
-    "test": "jest",
+    "test": "jest -c jest.config.js",
+    "test:unit": "jest -c jest.config.unit.js",
+    "test:integration": "jest -c --passWithNoTests jest.config.integration.js",
     "build": "node --max_old_space_size=1024 node_modules/typescript/bin/tsc",
     "clean": "rm -rf ./dist/* "
   },
@@ -47,10 +49,5 @@
     "supertest": "^4.0.2",
     "ts-jest": "^24.2.0",
     "typescript": "^3.7.3"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "coveragePathIgnorePatterns": ["/node_modules/"]
   }
 }
