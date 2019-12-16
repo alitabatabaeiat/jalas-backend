@@ -8,7 +8,7 @@ const rules = {
     roomRequestedAt: Joi.date().iso(),
     meetingTimes: {
         startsAt: Joi.date().iso(),
-        endsAt: Joi.date().iso(),
+        endsAt: Joi.date().iso().greater(Joi.ref('startsAt')),
         selected: Joi.boolean()
     },
     vote: {
