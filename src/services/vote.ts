@@ -1,4 +1,5 @@
-import {EntityManager, getManager} from "typeorm";
+import {getCustomRepository} from "typeorm";
+import { Transactional } from "typeorm-transactional-cls-hooked";
 import _ from 'lodash';
 import HttpException from "../exceptions/httpException";
 import VoteRepository from "../repositories/vote";
@@ -7,27 +8,22 @@ import Vote from "../entities/vote";
 
 export default class VoteService {
     private static service: VoteService;
-    private mainRepository: VoteRepository;
-    private repository: VoteRepository;
+    private readonly repository: VoteRepository;
 
     private constructor() {
-        this.mainRepository = getManager().getCustomRepository(VoteRepository);
+        this.repository = getCustomRepository(VoteRepository);
     };
 
-    public static getInstance(manager?: EntityManager) {
+    public static getInstance() {
         if (!VoteService.service)
             VoteService.service = VoteService._getInstance();
-        return VoteService.service._setManager(manager);
+        return VoteService.service;
     }
 
     private static _getInstance = (): VoteService => new VoteService();
 
-    private _setManager = (manager: EntityManager = getManager()) => {
-        this.repository = manager.getCustomRepository(VoteRepository);
-        return this;
-    };
-
-    public insertVote = async (vote) => {
+    @Transactional()
+    public async insertVote(vote) {
         try {
             const newVote = new Vote();
             newVote.voteFor = vote.voteFor;
@@ -40,9 +36,10 @@ export default class VoteService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public updateVote = async (vote) => {
+    @Transactional()
+    public async updateVote(vote) {
         try {
             const updatedVote = _.pick(vote, ['voteFor']);
             await this.repository.update(vote.id, updatedVote);
@@ -52,5 +49,5 @@ export default class VoteService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 }

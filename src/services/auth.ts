@@ -1,4 +1,4 @@
-import {EntityManager, getManager} from "typeorm";
+import {getCustomRepository} from "typeorm";
 import HttpException from "../exceptions/httpException";
 import UnAuthorizedException from "../exceptions/unAuthorizedException";
 import UserRepository from "../repositories/user";
@@ -6,29 +6,23 @@ import UserRepository from "../repositories/user";
 
 export default class AuthService {
     private static service: AuthService;
-    private mainRepository: UserRepository;
-    private repository: UserRepository;
+    private readonly repository: UserRepository;
 
     private constructor() {
-        this.mainRepository = getManager().getCustomRepository(UserRepository);
+        this.repository = getCustomRepository(UserRepository);
     };
 
-    public static getInstance(manager?: EntityManager) {
+    public static getInstance() {
         if (!AuthService.service)
             AuthService.service = AuthService._getInstance();
-        return AuthService.service._setManager(manager);
+        return AuthService.service;
     }
 
     private static _getInstance = (): AuthService => new AuthService();
 
-    private _setManager = (manager: EntityManager = getManager()) => {
-        this.repository = manager.getCustomRepository(UserRepository);
-        return this;
-    };
-
-    public login = async ({email}) => {
+    public async login({email}) {
         try {
-            const user = await this.mainRepository.findOne({where: {email}});
+            const user = await this.repository.findOne({where: {email}});
             if (user) {
                 return {
                     message: 'User logged in successfully',
@@ -41,5 +35,5 @@ export default class AuthService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 }

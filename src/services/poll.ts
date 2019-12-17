@@ -1,4 +1,5 @@
-import {EntityManager, getManager} from "typeorm";
+import {getCustomRepository} from "typeorm";
+import {Transactional} from 'typeorm-transactional-cls-hooked';
 import moment from "moment";
 import _ from "lodash";
 import PollRepository from "../repositories/poll";
@@ -14,27 +15,22 @@ import MailService from "./mail";
 
 export default class PollService {
     private static service: PollService;
-    private mainRepository: PollRepository;
-    private repository: PollRepository;
+    private readonly repository: PollRepository;
 
     private constructor() {
-        this.mainRepository = getManager().getCustomRepository(PollRepository);
+        this.repository = getCustomRepository(PollRepository);
     };
 
-    public static getInstance(manager?: EntityManager) {
+    public static getInstance() {
         if (!PollService.service)
             PollService.service = PollService._getInstance();
-        return PollService.service._setManager(manager);
+        return PollService.service;
     }
 
     private static _getInstance = (): PollService => new PollService();
 
-    private _setManager = (manager: EntityManager = getManager()) => {
-        this.repository = manager.getCustomRepository(PollRepository);
-        return this;
-    };
-
-    public createPoll = async (ownerEmail: string, poll) => {
+    @Transactional()
+    public async createPoll(ownerEmail: string, poll) {
         try {
             let newPoll = new Poll();
             newPoll.title = poll.title;
@@ -42,11 +38,8 @@ export default class PollService {
             newPoll.participants = await Promise.all(poll.participants.map(async participant =>
                 await UserService.getInstance().getUser(participant)
             ));
-            await getManager().transaction(async entityManager => {
-                await this._setManager(entityManager).repository.save(newPoll);
-                newPoll.possibleMeetingTimes = await MeetingTimeService.getInstance(entityManager)
-                    .createMeetingTime(poll.possibleMeetingTimes, newPoll.id);
-            });
+            await this.repository.save(newPoll);
+            newPoll.possibleMeetingTimes = await MeetingTimeService.getInstance().createMeetingTime(poll.possibleMeetingTimes, newPoll.id);
             MailService.getInstance().sendPollURL([ownerEmail, ...poll.participants], newPoll.id, poll.title);
             return newPoll;
         } catch (ex) {
@@ -56,10 +49,11 @@ export default class PollService {
         }
     };
 
-    public getPolls = async (userEmail: string) => {
+    @Transactional()
+    public async getPolls(userEmail: string) {
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            return await this.mainRepository.find({
+            return await this.repository.find({
                 where: {owner: user},
                 order: {createdAt: 'DESC'},
                 select: ["id", "owner", "room", "state", "title"]
@@ -69,11 +63,12 @@ export default class PollService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public getPoll = async (userEmail: string, pollId: string) => {
+    @Transactional()
+    public async getPoll(userEmail: string, pollId: string) {
         try {
-            const poll = await this.mainRepository.findOneThatUserParticipateOnIt(pollId, userEmail);
+            const poll = await this.repository.findOneThatUserParticipateOnIt(pollId, userEmail);
             if (poll && poll.owner.email === userEmail) {
                 poll.possibleMeetingTimes.forEach(meetingTime =>
                     _.remove(meetingTime.votes, vote => {
@@ -90,12 +85,12 @@ export default class PollService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public getAvailableRooms = async (userEmail: string, pollId: string) => {
+    public async getAvailableRooms(userEmail: string, pollId: string) {
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 return await ReservationService.getInstance().getAvailableRooms(meetingTime.startsAt, meetingTime.endsAt);
@@ -108,27 +103,20 @@ export default class PollService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public reserveRoom = async (userEmail: string, pollId: string, {room}) => {
+    @Transactional()
+    public async reserveRoom(userEmail: string, pollId: string, {room}) {
         let user, poll, meetingTime;
         try {
             user = await UserService.getInstance().getUser(userEmail);
-            poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
+            poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
                 const result = await ReservationService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
-                await getManager().transaction(async entityManager => {
-                    await this._setManager(entityManager).repository.update(pollId, {
-                        state: 3,
-                        room,
-                        roomRequestedAt: moment().toISOString()
-                    });
-                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
-                    await qualityInUseService.reserveRoom();
-                    await qualityInUseService.pollCreated(pollId);
-                    throw new HttpException(503);
-                });
+                await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
+                await QualityInUseService.getInstance().reserveRoom();
+                await QualityInUseService.getInstance().pollCreated(pollId);
                 MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                 return result;
             } else if (!poll)
@@ -139,7 +127,7 @@ export default class PollService {
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
                 if (ex.status === 503) {
-                    await this.mainRepository.update(pollId, {state: 2, room, roomRequestedAt: moment().toISOString()});
+                    await this.repository.update(pollId, {state: 2, room, roomRequestedAt: moment().toISOString()});
                     let interval = setInterval(async () => {
                         let status;
                         try {
@@ -152,17 +140,14 @@ export default class PollService {
                             if (status === 200) {
                                 clearInterval(interval);
                                 interval = null;
-                                await getManager().transaction(async entityManager => {
-                                    await this._setManager(entityManager).repository.update(pollId, {state: 3});
-                                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
-                                    await qualityInUseService.reserveRoom();
-                                    await qualityInUseService.pollCreated(pollId);
-                                });
+                                await this.repository.update(pollId, {state: 3});
+                                await QualityInUseService.getInstance().reserveRoom();
+                                await QualityInUseService.getInstance().pollCreated(pollId);
                                 MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, true);
                             } else if (status === 400) {
                                 clearInterval(interval);
                                 interval = null;
-                                await this.mainRepository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
+                                await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
                                 MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, false);
                             }
                         }
@@ -172,26 +157,22 @@ export default class PollService {
             }
             throw new HttpException();
         }
-    };
+    }
 
     public selectMeetingTime = async (userEmail: string, pollId: string, {meetingTime}) => {
         if (!meetingTime.selected)
             throw new InvalidRequestException('You cannot deselect meeting time');
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.mainRepository.findOne({
+            const poll = await this.repository.findOne({
                 where: {owner: user, id: pollId},
                 relations: ['participants']
             });
             if (poll && poll.state === 0) {
-                let updatedMeetingTime = null;
-                await getManager().transaction(async entityManager => {
-                    await this._setManager(entityManager).repository.update(pollId, {state: 1});
-                    const qualityInUseService = QualityInUseService.getInstance(entityManager);
-                    updatedMeetingTime = await MeetingTimeService.getInstance(entityManager).updateMeetingTime(pollId, meetingTime.id, meetingTime);
-                    await qualityInUseService.pollChanged(pollId);
-                    await qualityInUseService.userEntersPollPage(pollId);
-                });
+                await this.repository.update(pollId, {state: 1});
+                const updatedMeetingTime = await MeetingTimeService.getInstance().updateMeetingTime(pollId, meetingTime.id, meetingTime);
+                await QualityInUseService.getInstance().pollChanged(pollId);
+                await QualityInUseService.getInstance().userEntersPollPage(pollId);
                 MailService.getInstance().sendPollURL([userEmail, ...poll.participants.map(p => p.email)], poll.id, poll.title);
                 return updatedMeetingTime;
             } else if (!poll)
@@ -208,7 +189,7 @@ export default class PollService {
 
     public voteMeetingTime = async (userEmail: string, pollId: string, {vote}) => {
         try {
-            const poll = await this.mainRepository.findOneThatUserParticipateOnItWithMeetingTimeVote(pollId, userEmail, vote.meetingTimeId);
+            const poll = await this.repository.findOneThatUserParticipateOnItWithMeetingTimeVote(pollId, userEmail, vote.meetingTimeId);
             if (poll && poll.state === 0 && (poll.owner || poll.participants.length > 0) && poll.possibleMeetingTimes.length > 0) {
                 _.remove(poll.possibleMeetingTimes[0].votes, vote => !vote.voter);
                 poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
@@ -233,14 +214,11 @@ export default class PollService {
     public removePoll = async (userEmail: string, pollId: string) => {
         try {
             const user = await UserService.getInstance().getUser(userEmail);
-            const poll = await this.mainRepository.findOne({where: {owner: user, id: pollId}});
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state < 3) {
-                    await getManager().transaction(async entityManager => {
-                        await this._setManager(entityManager).repository.delete(pollId);
-                        await QualityInUseService.getInstance(entityManager).pollChanged(pollId);
-                    });
-                    return;
-
+                await this.repository.delete(pollId);
+                await QualityInUseService.getInstance().pollChanged(pollId);
+                return `Poll '${poll.id}' removed successfully`;
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
             else if (poll.state === 3)

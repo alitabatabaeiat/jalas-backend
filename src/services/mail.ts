@@ -3,6 +3,7 @@ import {google} from 'googleapis';
 
 export default class MailService {
     private static service: MailService;
+    private readonly _smtpTransport;
     private readonly accessToken;
 
     private constructor() {
@@ -17,6 +18,17 @@ export default class MailService {
             refresh_token: process.env.GMAIL_REFRESH_TOKEN
         });
         this.accessToken = oauth2Client.getAccessToken();
+        this._smtpTransport = nodemailer.createTransport({
+            service: process.env.EMAIL_SERVICE,
+            auth: {
+                type: "OAuth2",
+                user: process.env.EMAIL_ADDRESS,
+                clientId: process.env.GMAIL_CLIENT_ID,
+                clientSecret: process.env.GMAIL_CLIENT_SECRET,
+                refreshToken: process.env.GMAIL_REFRESH_TOKEN,
+                accessToken: this.accessToken
+            }
+        });
     };
 
     public static getInstance() {
@@ -26,18 +38,6 @@ export default class MailService {
     }
 
     private static _getInstance = (): MailService => new MailService();
-
-    private _smtpTransport = nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE,
-        auth: {
-            type: "OAuth2",
-            user: process.env.EMAIL_ADDRESS,
-            clientId: process.env.GMAIL_CLIENT_ID,
-            clientSecret: process.env.GMAIL_CLIENT_SECRET,
-            refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-            accessToken: this.accessToken
-        }
-    });
 
     public sendMail = (to: string | string[], subject: string, message: string) => {
         this._smtpTransport.sendMail({

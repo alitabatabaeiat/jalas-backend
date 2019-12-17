@@ -1,4 +1,4 @@
-import {EntityManager, getManager} from "typeorm";
+import {getCustomRepository} from "typeorm";
 import HttpException from "../exceptions/httpException";
 import UserRepository from "../repositories/user";
 import User from "../entities/user";
@@ -8,29 +8,23 @@ import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
 
 export default class UserService {
     private static service: UserService;
-    private mainRepository: UserRepository;
-    private repository: UserRepository;
+    private readonly repository: UserRepository;
 
     private constructor() {
-        this.mainRepository = getManager().getCustomRepository(UserRepository);
+        this.repository = getCustomRepository(UserRepository);
     };
 
-    public static getInstance(manager?: EntityManager) {
+    public static getInstance() {
         if (!UserService.service)
             UserService.service = UserService._getInstance();
-        return UserService.service._setManager(manager);
+        return UserService.service;
     }
 
     private static _getInstance = (): UserService => new UserService();
 
-    private _setManager = (manager: EntityManager = getManager()) => {
-        this.repository = manager.getCustomRepository(UserRepository);
-        return this;
-    };
-
-    public createUser = async (user) => {
+    public async createUser(user) {
         try {
-            const userExist = await this.mainRepository.findOne({email: user.email}, {select: ['id']});
+            const userExist = await this.repository.findOne({email: user.email}, {select: ['id']});
             if (!userExist) {
                 let newUser = new User();
                 newUser.email = user.email;
@@ -46,11 +40,11 @@ export default class UserService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public getUser = async (userEmail: string) => {
+    public async getUser(userEmail: string) {
         try {
-            const user = await this.mainRepository.findOne({email: userEmail}, {select: ['id', 'email']});
+            const user = await this.repository.findOne({email: userEmail}, {select: ['id', 'email']});
             if (user)
                 return user;
             else
@@ -60,5 +54,5 @@ export default class UserService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 }
