@@ -1,4 +1,5 @@
-import {EntityManager, getManager} from "typeorm";
+import {getCustomRepository} from "typeorm";
+import {Transactional} from "typeorm-transactional-cls-hooked";
 import _ from 'lodash';
 import MeetingTimeRepository from "../repositories/meetingTime";
 import HttpException from "../exceptions/httpException";
@@ -9,25 +10,19 @@ import VoteService from "./vote";
 
 export default class MeetingTimeService {
     private static service: MeetingTimeService;
-    private mainRepository: MeetingTimeRepository;
-    private repository: MeetingTimeRepository;
+    private readonly repository: MeetingTimeRepository;
 
     private constructor() {
-        this.mainRepository = getManager().getCustomRepository(MeetingTimeRepository);
+        this.repository = getCustomRepository(MeetingTimeRepository);
     };
 
-    public static getInstance(manager?: EntityManager) {
+    public static getInstance() {
         if (!MeetingTimeService.service)
             MeetingTimeService.service = MeetingTimeService._getInstance();
-        return MeetingTimeService.service._setManager(manager);
+        return MeetingTimeService.service;
     }
 
     private static _getInstance = (): MeetingTimeService => new MeetingTimeService();
-
-    private _setManager = (manager: EntityManager = getManager()) => {
-        this.repository = manager.getCustomRepository(MeetingTimeRepository);
-        return this;
-    };
 
     private _createMeetingTime = (meetingTime: { startsAt, endsAt }, pollId) => {
         const newMeetingTime = new MeetingTime();
@@ -38,7 +33,8 @@ export default class MeetingTimeService {
         return newMeetingTime;
     };
 
-    public createMeetingTime = async (meetingTimes: { startsAt, endsAt } | Array<{ startsAt, endsAt }>, pollId) => {
+    @Transactional()
+    public async createMeetingTime(meetingTimes: { startsAt, endsAt } | Array<{ startsAt, endsAt }>, pollId) {
         try {
             if (!Array.isArray(meetingTimes))
                 meetingTimes = [meetingTimes];
@@ -55,7 +51,8 @@ export default class MeetingTimeService {
         }
     };
 
-    public updateMeetingTime = async (pollId, meetingTimeId, meetingTime) => {
+    @Transactional()
+    public async updateMeetingTime(pollId, meetingTimeId, meetingTime) {
         try {
             let meetingTimeInDB = await this.repository.findOne({
                 where: {poll: pollId, id: meetingTimeId},
@@ -72,7 +69,7 @@ export default class MeetingTimeService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
     public getSelectedMeetingTime = async (pollId) => {
         try {
@@ -91,7 +88,8 @@ export default class MeetingTimeService {
         }
     };
 
-    public saveVote = async (meetingTime, vote) => {
+    @Transactional()
+    public async saveVote(meetingTime, vote) {
         try {
             if (meetingTime.votes.length > 0) {
                 if (vote.voteFor !== meetingTime.votes[0].voteFor) {
@@ -110,14 +108,12 @@ export default class MeetingTimeService {
             else
                 meetingTime.voteAgainst += 1;
             const updatedMeetingTime = _.omit(meetingTime, ['id', 'votes']);
-            await getManager().transaction(async entityManager => {
-                await this.repository.update(meetingTime.id, updatedMeetingTime);
-                const voteService = VoteService.getInstance(entityManager);
-                if (meetingTime.votes.length > 0)
-                    meetingTime.votes[0] = await voteService.updateVote(meetingTime.votes[0]);
-                else
-                    meetingTime.votes[0] = await voteService.insertVote(vote);
-            });
+            await this.repository.update(meetingTime.id, updatedMeetingTime);
+            const voteService = VoteService.getInstance();
+            if (meetingTime.votes.length > 0)
+                meetingTime.votes[0] = await voteService.updateVote(meetingTime.votes[0]);
+            else
+                meetingTime.votes[0] = await voteService.insertVote(vote);
             return meetingTime;
         } catch (ex) {
             console.log(ex);

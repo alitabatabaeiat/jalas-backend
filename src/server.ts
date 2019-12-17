@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import 'reflect-metadata';
 import {createConnection} from "typeorm";
+import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepository } from 'typeorm-transactional-cls-hooked';
 
 import App from "./app";
 import config from "./ormconfig";
@@ -22,6 +23,8 @@ process.on('unhandledRejection', ex => {
             console.error(error.details);
             process.exit(1);
         }
+        initializeTransactionalContext();
+        patchTypeORMRepositoryWithBaseRepository();
         await createConnection(config);
         winston.info(`Connected to database...`);
         try {

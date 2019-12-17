@@ -1,4 +1,5 @@
-import {EntityManager, getManager} from "typeorm";
+import {getCustomRepository} from "typeorm";
+import {Transactional} from "typeorm-transactional-cls-hooked";
 import moment from "moment";
 import HttpException from "../exceptions/httpException";
 import QualityInUseRepository from "../repositories/qualityInUse";
@@ -6,29 +7,24 @@ import QualityInUse from "../entities/qualityInUse";
 
 export default class QualityInUseService {
     private static service: QualityInUseService;
-    private mainRepository: QualityInUseRepository;
-    private repository: QualityInUseRepository;
+    private readonly repository: QualityInUseRepository;
 
     private constructor() {
-        this.mainRepository = getManager().getCustomRepository(QualityInUseRepository);
+        this.repository = getCustomRepository(QualityInUseRepository);
     };
 
-    public static getInstance(manager?: EntityManager) {
+    public static getInstance() {
         if (!QualityInUseService.service)
             QualityInUseService.service = QualityInUseService._getInstance();
-        return QualityInUseService.service._setManager(manager);
+        return QualityInUseService.service;
     }
-
-    private _setManager = (manager: EntityManager = getManager()) => {
-        this.repository = manager.getCustomRepository(QualityInUseRepository);
-        return this;
-    };
 
     private static _getInstance = (): QualityInUseService => new QualityInUseService();
 
-    public reserveRoom = async () => {
+    @Transactional()
+    public async reserveRoom() {
         try {
-            let reserveRoom = await this.mainRepository.findOne({where: {title: 'reserveRoom'}});
+            let reserveRoom = await this.repository.findOne({where: {title: 'reserveRoom'}});
 
             if (reserveRoom)
                 return await this.repository.update(reserveRoom.id, {column1: (parseInt(reserveRoom.column1) + 1).toString()});
@@ -43,9 +39,10 @@ export default class QualityInUseService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public getNumberOfReservedRooms = async () => {
+    @Transactional()
+    public async getNumberOfReservedRooms() {
         let error;
         try {
             let qualityInUse = await this.repository.findOne({where: {title: 'reserveRoom'}});
@@ -57,11 +54,12 @@ export default class QualityInUseService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public pollChanged = async (pollId) => {
+    @Transactional()
+    public async pollChanged(pollId) {
         try {
-            let pollChanged = await this.mainRepository.findOne({where: {title: 'pollChanged', column1: pollId}});
+            let pollChanged = await this.repository.findOne({where: {title: 'pollChanged', column1: pollId}});
 
             if (pollChanged)
                 return;
@@ -76,11 +74,11 @@ export default class QualityInUseService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public getNumberOfChangedPolls = async () => {
+    public async getNumberOfChangedPolls() {
         try {
-            let numberOfChangedPolls = (await this.mainRepository.createQueryBuilder()
+            let numberOfChangedPolls = (await this.repository.createQueryBuilder()
                 .where({title: 'pollChanged'})
                 .select('COUNT(id)').getRawOne()).count;
             return {
@@ -91,11 +89,12 @@ export default class QualityInUseService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public userEntersPollPage = async (pollId) => {
+    @Transactional()
+    public async userEntersPollPage(pollId) {
         try {
-            let pollCreationTime = await this.mainRepository.findOne({where: {title: 'pollCreationTime', column1: pollId}});
+            let pollCreationTime = await this.repository.findOne({where: {title: 'pollCreationTime', column1: pollId}});
 
             if (pollCreationTime) {
                 if (/^[0-9]*$/.test(pollCreationTime.column2))
@@ -114,11 +113,12 @@ export default class QualityInUseService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public pollCreated = async (pollId) => {
+    @Transactional()
+    public async pollCreated(pollId) {
         try {
-            let pollCreationTime = await this.mainRepository.findOne({where: {title: 'pollCreationTime', column1: pollId}});
+            let pollCreationTime = await this.repository.findOne({where: {title: 'pollCreationTime', column1: pollId}});
 
             if (pollCreationTime) {
                 if (/^[0-9]*$/.test(pollCreationTime.column2))
@@ -135,11 +135,11 @@ export default class QualityInUseService {
                 throw ex;
             throw new HttpException();
         }
-    };
+    }
 
-    public getAverageCreationTime = async () => {
+    public async getAverageCreationTime() {
         try {
-            let averageCreationTime = (await this.mainRepository.createQueryBuilder()
+            let averageCreationTime = (await this.repository.createQueryBuilder()
                 .where(`title = 'pollCreationTime' AND column2 ~ '^[0-9]*$'`)
                 .select('AVG(column2::INTEGER)').getRawOne()).avg;
             return {
