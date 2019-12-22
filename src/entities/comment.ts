@@ -6,7 +6,7 @@ import User from "./user";
 @Entity('comments')
 export default class Comment extends Base {
     @Column( 'text')
-    public text: Date;
+    public text: string;
 
     @OneToOne(type => User)
     public writer: User;

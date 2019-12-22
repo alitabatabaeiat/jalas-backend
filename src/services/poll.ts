@@ -12,6 +12,7 @@ import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
 import MailService from "./mail";
+import CommentService from "./comment";
 
 export default class PollService {
     private static service: PollService;
@@ -225,4 +226,21 @@ export default class PollService {
             throw new HttpException();
         }
     };
+
+    @Transactional()
+    public async createComment(user, pollId: any, {text}) {
+        try {
+            // TODO: must change it
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            if (poll) {
+                (<any>poll).newComment = await CommentService.getInstance().createComment(user, poll, text);
+                return poll;
+            } else if (!poll)
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+        } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
 }
