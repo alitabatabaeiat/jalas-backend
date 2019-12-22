@@ -2,7 +2,7 @@ import {CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn} from "typeor
 
 export default class Base {
     @PrimaryGeneratedColumn('uuid')
-    public id?: string;
+    public id: string;
 
     @CreateDateColumn({name: 'created_at'})
     public createdAt: Date;

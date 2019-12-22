@@ -25,25 +25,21 @@ process.on('unhandledRejection', ex => {
         }
         initializeTransactionalContext();
         patchTypeORMRepositoryWithBaseRepository();
-        await createConnection(config);
-        winston.info(`Connected to database...`);
-        try {
-            await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com'});
-            await UserService.getInstance().createUser({email: 'h.ghadimi1998@gmail.com'});
-            await UserService.getInstance().createUser({email: 'm.nourbakhsh75@gmail.com'});
-            await UserService.getInstance().createUser({email: 'a.tabatabaei97@icloud.com'});
-            await UserService.getInstance().createUser({email: 'a.tabatabaei97@hotmail.com'});
-            await UserService.getInstance().createUser({email: 'ali@gmail.com'});
-            await UserService.getInstance().createUser({email: 'gholam@gmail.com'});
-            await UserService.getInstance().createUser({email: 'bashir@gmail.com'});
-            await UserService.getInstance().createUser({email: 'saeed@gmail.com'});
-        } catch (ex) {}
         const controllers = [
             new AuthController(),
             new PollController(),
             new QualityInUseController()
         ];
         const app = new App(controllers);
+        await createConnection(config);
+        winston.info(`Connected to database...`);
+        try {
+            await UserService.getInstance().createUser({email: 'a.tabatabaei97@gmail.com', fullName: 'علی طباطبایی'});
+            await UserService.getInstance().createUser({email: 'h.ghadimi1998@gmail.com', fullName: 'حبیب قدیمی'});
+            await UserService.getInstance().createUser({email: 'm.nourbakhsh75@gmail.com', fullName: 'مهرداد نوربخش'});
+            await UserService.getInstance().createUser({email: 'a.tabatabaei97@icloud.com', fullName: 'علی طباطبایی ۲'});
+            await UserService.getInstance().createUser({email: 'a.tabatabaei97@hotmail.com', fullName: 'علی طباطبایی ۳'});
+        } catch (ex) {}
         app.listen();
     } catch (error) {
         winston.error('Error while connecting to the database');
