@@ -28,11 +28,10 @@ export default class UserService {
             if (!userExist) {
                 let newUser = new User();
                 newUser.email = user.email;
+                newUser.password = '123456';
+                newUser.fullName = user.fullName;
                 await this.repository.insert(newUser);
-                return {
-                    message: 'User created successfully',
-                    accessToken: `Bearer ${user.email}`
-                }
+                return 'User created successfully';
             } else
                 throw new InvalidRequestException(`User with email '${user.email} exists'`);
         } catch (ex) {
@@ -44,7 +43,7 @@ export default class UserService {
 
     public async getUser(userEmail: string) {
         try {
-            const user = await this.repository.findOne({email: userEmail}, {select: ['id', 'email']});
+            const user = await this.repository.findOne({email: userEmail}, {select: ['id', 'email', 'fullName']});
             if (user)
                 return user;
             else
