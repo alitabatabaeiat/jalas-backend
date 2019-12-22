@@ -29,21 +29,4 @@ describe('auth middleware', () => {
         expect(req.header).toHaveBeenCalledWith('Authorization');
         expect(next).toHaveBeenCalledWith(new UnAuthorizedException('Invalid token'));
     });
-
-    it('should populate req.user with the payload of a valid token', () => {
-        const user = {
-            email: 'a.tabatabaei97@gmail.com'
-        };
-        const token = `Bearer ${user.email}`;
-        const req = {
-            header: jest.fn().mockReturnValue(token)
-        } as any;
-        const res = {};
-        const next = jest.fn();
-
-        auth(req, res, next);
-
-        expect(req.header).toHaveBeenCalledWith('Authorization');
-        expect(req.user).toMatchObject(user);
-    });
 });
