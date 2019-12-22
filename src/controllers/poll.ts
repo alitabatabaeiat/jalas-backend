@@ -57,49 +57,49 @@ export default class PollController extends Controller {
 
     private static getPolls = async (req, res) => {
         const {user, body} = req;
-        const polls = await PollService.getInstance().getPolls(user.email);
+        const polls = await PollService.getInstance().getPolls(user);
         res.send(polls);
     };
 
     private static getPoll = async (req, res) => {
         const {user, params} = req;
-        const polls = await PollService.getInstance().getPoll(user.email, params.id);
+        const polls = await PollService.getInstance().getPoll(user, params.id);
         res.send(polls);
     };
 
     private static getAvailableRooms = async (req, res) => {
         const {user, params} = req;
-        const polls = await PollService.getInstance().getAvailableRooms(user.email, params.id);
+        const polls = await PollService.getInstance().getAvailableRooms(user, params.id);
         res.send(polls);
     };
 
     private static reserveRoom = async (req, res) => {
         const {user, params, body} = req;
-        const polls = await PollService.getInstance().reserveRoom(user.email, params.id, body);
+        const polls = await PollService.getInstance().reserveRoom(user, params.id, body);
         res.send(polls);
     };
 
     private static createPoll = async (req, res) => {
         const {user, body} = req;
-        const poll = await PollService.getInstance().createPoll(user.email, body);
+        const poll = await PollService.getInstance().createPoll(user, body);
         res.status(201).send(poll);
     };
 
     private static updateMeetingTime = async (req, res) => {
         const {user, params, body} = req;
-        const response = await PollService.getInstance().selectMeetingTime(user.email, params.id, body);
+        const response = await PollService.getInstance().selectMeetingTime(user, params.id, body);
         res.send(response);
     };
 
     private static voteMeetingTime = async (req, res) => {
         const {user, params, body} = req;
-        const response = await PollService.getInstance().voteMeetingTime(user.email, params.id, body);
+        const response = await PollService.getInstance().voteMeetingTime(user, params.id, body);
         res.send(response);
     };
 
     private static removePoll = async (req, res) => {
         const {user, params} = req;
-        const response = await PollService.getInstance().removePoll(user.email, params.id);
+        const response = await PollService.getInstance().removePoll(user, params.id);
         res.send('Poll removed successfully');
     }
 }

@@ -8,7 +8,12 @@ export default async function auth(req, res, next) {
     else
         next(new UnAuthorizedException('No token provided'));
     try {
-        req.user = jwt.verify(token, process.env.JWT_SECRET);
+        let decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = {
+            id: (<any>decodedToken).id,
+            email: (<any>decodedToken).email,
+            fullName: (<any>decodedToken).fullName
+        };
         next();
     } catch (ex) {
         next(new UnAuthorizedException('Invalid token'));

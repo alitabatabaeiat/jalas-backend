@@ -30,17 +30,17 @@ export default class PollService {
     private static _getInstance = (): PollService => new PollService();
 
     @Transactional()
-    public async createPoll(ownerEmail: string, poll) {
+    public async createPoll(owner, poll) {
         try {
             let newPoll = new Poll();
             newPoll.title = poll.title;
-            newPoll.owner = await UserService.getInstance().getUser(ownerEmail);
+            newPoll.owner = owner;
             newPoll.participants = await Promise.all(poll.participants.map(async participant =>
                 await UserService.getInstance().getUser(participant)
             ));
             await this.repository.save(newPoll);
             newPoll.possibleMeetingTimes = await MeetingTimeService.getInstance().createMeetingTime(poll.possibleMeetingTimes, newPoll.id);
-            MailService.getInstance().sendPollURL([ownerEmail, ...poll.participants], newPoll.id, poll.title);
+            MailService.getInstance().sendPollURL([owner.email, ...poll.participants], newPoll.id, poll.title);
             return newPoll;
         } catch (ex) {
             if (ex instanceof HttpException)
@@ -50,9 +50,9 @@ export default class PollService {
     };
 
     @Transactional()
-    public async getPolls(userEmail: string) {
+    public async getPolls(user) {
+        // TODO: return  all polls that user owns or participates on them
         try {
-            const user = await UserService.getInstance().getUser(userEmail);
             return await this.repository.find({
                 where: {owner: user},
                 order: {createdAt: 'DESC'},
@@ -66,10 +66,10 @@ export default class PollService {
     }
 
     @Transactional()
-    public async getPoll(userEmail: string, pollId: string) {
+    public async getPoll(user, pollId: string) {
         try {
-            const poll = await this.repository.findOneThatUserParticipateOnIt(pollId, userEmail);
-            if (poll && poll.owner.email === userEmail) {
+            const poll = await this.repository.findOneThatUserParticipateOnIt(pollId, user.email);
+            if (poll) {
                 poll.possibleMeetingTimes.forEach(meetingTime =>
                     _.remove(meetingTime.votes, vote => {
                         const mustRemove = !vote.voter;
@@ -87,9 +87,8 @@ export default class PollService {
         }
     }
 
-    public async getAvailableRooms(userEmail: string, pollId: string) {
+    public async getAvailableRooms(user, pollId: string) {
         try {
-            const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 const meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
@@ -106,10 +105,9 @@ export default class PollService {
     }
 
     @Transactional()
-    public async reserveRoom(userEmail: string, pollId: string, {room}) {
-        let user, poll, meetingTime;
+    public async reserveRoom(user, pollId: string, {room}) {
+        let poll, meetingTime;
         try {
-            user = await UserService.getInstance().getUser(userEmail);
             poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state === 1) {
                 meetingTime = await MeetingTimeService.getInstance().getSelectedMeetingTime(pollId);
@@ -159,11 +157,10 @@ export default class PollService {
         }
     }
 
-    public selectMeetingTime = async (userEmail: string, pollId: string, {meetingTime}) => {
+    public selectMeetingTime = async (user, pollId: string, {meetingTime}) => {
         if (!meetingTime.selected)
             throw new InvalidRequestException('You cannot deselect meeting time');
         try {
-            const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.repository.findOne({
                 where: {owner: user, id: pollId},
                 relations: ['participants']
@@ -173,7 +170,7 @@ export default class PollService {
                 const updatedMeetingTime = await MeetingTimeService.getInstance().updateMeetingTime(pollId, meetingTime.id, meetingTime);
                 await QualityInUseService.getInstance().pollChanged(pollId);
                 await QualityInUseService.getInstance().userEntersPollPage(pollId);
-                MailService.getInstance().sendPollURL([userEmail, ...poll.participants.map(p => p.email)], poll.id, poll.title);
+                MailService.getInstance().sendPollURL([user.email, ...poll.participants.map(p => p.email)], poll.id, poll.title);
                 return updatedMeetingTime;
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
@@ -187,9 +184,9 @@ export default class PollService {
         }
     };
 
-    public voteMeetingTime = async (userEmail: string, pollId: string, {vote}) => {
+    public voteMeetingTime = async (user, pollId: string, {vote}) => {
         try {
-            const poll = await this.repository.findOneThatUserParticipateOnItWithMeetingTimeVote(pollId, userEmail, vote.meetingTimeId);
+            const poll = await this.repository.findOneThatUserParticipateOnItWithMeetingTimeVote(pollId, user.email, vote.meetingTimeId);
             if (poll && poll.state === 0 && (poll.owner || poll.participants.length > 0) && poll.possibleMeetingTimes.length > 0) {
                 _.remove(poll.possibleMeetingTimes[0].votes, vote => !vote.voter);
                 poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
@@ -211,9 +208,8 @@ export default class PollService {
         }
     };
 
-    public removePoll = async (userEmail: string, pollId: string) => {
+    public removePoll = async (user, pollId: string) => {
         try {
-            const user = await UserService.getInstance().getUser(userEmail);
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state < 3) {
                 await this.repository.delete(pollId);
