@@ -238,6 +238,7 @@ export default class PollService {
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
