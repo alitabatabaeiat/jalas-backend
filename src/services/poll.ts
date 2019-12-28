@@ -12,6 +12,7 @@ import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
 import MailService from "./mail";
+import winston from "winston";
 
 export default class PollService {
     private static service: PollService;
@@ -51,14 +52,10 @@ export default class PollService {
 
     @Transactional()
     public async getPolls(user) {
-        // TODO: return  all polls that user owns or participates on them
         try {
-            return await this.repository.find({
-                where: {owner: user},
-                order: {createdAt: 'DESC'},
-                select: ["id", "owner", "room", "state", "title"]
-            });
+            return await this.repository.findAllThatUserParticipates(user.id);
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();

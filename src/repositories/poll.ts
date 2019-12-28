@@ -3,6 +3,16 @@ import Poll from "../entities/poll";
 
 @EntityRepository(Poll)
 export default class PollRepository extends Repository<Poll> {
+    async findAllThatUserParticipates(userId: string): Promise<Poll[] | undefined> {
+        return this.manager.createQueryBuilder(Poll, 'poll')
+            .select(['poll.id', 'poll.title', 'poll.room', 'poll.state'])
+            .leftJoin('poll.participants', 'participant', 'participant.id = :userId')
+            .where('poll.owner = :userId')
+            .orWhere('participant.id = :userId')
+            .setParameter('userId', userId)
+            .getMany();
+    }
+
     findOneThatUserParticipateOnIt(id, userEmail): Promise<Poll | undefined> {
         return this.manager.createQueryBuilder(Poll, 'poll')
             .select(['poll.id', 'poll.title', 'poll.room', 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',

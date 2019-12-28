@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import winston from 'winston';
+import winston, {format} from 'winston';
 import Controller from "./controllers/controller";
 import notFoundMiddleware from "./middlewares/notFound";
 import errorMiddleware from "./middlewares/error";
@@ -33,9 +33,16 @@ class App {
     }
 
     private initializeWinston() {
-        winston.add(new winston.transports.File({ filename: 'logfile.log' }));
+        winston.add(new winston.transports.File({
+            filename: 'logfile.log', format: format.combine(
+                format.timestamp({
+                    format: 'YYYY-MM-DD HH:mm:ss'
+                }),
+                format.simple()
+            )
+        }));
         winston.exceptions.handle(
-            new winston.transports.File({ filename: 'uncaughtExceptions.log' }),
+            new winston.transports.File({filename: 'uncaughtExceptions.log'}),
             new winston.transports.Console()
         );
     }
