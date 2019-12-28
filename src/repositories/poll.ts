@@ -24,6 +24,7 @@ export default class PollRepository extends Repository<Poll> {
             .leftJoin('meetingTime.votes', 'vote')
             .leftJoin('vote.voter', 'voter', 'voter.email = :userEmail')
             .where('poll.id = :id')
+            .andWhere('(owner.email = :userEmail OR participant.email = :userEmail)')
             .setParameters({id, userEmail})
             .getOne();
     }
