@@ -50,4 +50,11 @@ const createCommentSchema = Joi.object({
     text: Joi.string().required()
 });
 
-export {createPollSchema, selectMeetingTime, voteMeetingTime, reserveRoomSchema, createCommentSchema};
+const addMeetingTimeSchema = Joi.object({
+    meetingTime: Joi.object({
+        startsAt: rules.meetingTimes.startsAt.required(),
+        endsAt: rules.meetingTimes.endsAt.required()
+    }).required()
+})
+
+export { createPollSchema, selectMeetingTime, voteMeetingTime, reserveRoomSchema, createCommentSchema, addMeetingTimeSchema};
