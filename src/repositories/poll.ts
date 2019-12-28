@@ -34,12 +34,13 @@ export default class PollRepository extends Repository<Poll> {
             .select(['poll.id', 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',
                 'meetingTime.voteFor', 'meetingTime.voteAgainst', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
                 'vote.id', 'vote.voteFor', 'voter.id'])
-            .leftJoin('poll.owner', 'owner', 'owner.email = :userEmail',)
+            .leftJoin('poll.owner', 'owner')
             .leftJoin('poll.participants', 'participant', 'participant.email = :userEmail')
             .leftJoin('poll.possibleMeetingTimes', 'meetingTime', 'meetingTime.id = :meetingTimeId')
             .leftJoin('meetingTime.votes', 'vote')
             .leftJoin('vote.voter', 'voter', 'voter.email = :userEmail')
             .where('poll.id = :id')
+            .andWhere('(owner.email = :userEmail OR participant.email = :userEmail)')
             .setParameters({id, userEmail, meetingTimeId})
             .getOne();
     }
