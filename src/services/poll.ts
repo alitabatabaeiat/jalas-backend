@@ -244,4 +244,23 @@ export default class PollService {
             throw new HttpException();
         }
     }
+
+    public addMeetingTime = async (user, pollId: string, {meetingTime}) => {
+        try{
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            if(poll){
+                let newMeetingTime = await MeetingTimeService.getInstance().createMeetingTime(meetingTime, pollId);
+                console.log(newMeetingTime)
+                await QualityInUseService.getInstance().pollChanged(pollId);
+                //TO DO : email
+                return newMeetingTime
+            }else if (!poll)
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+        }catch (ex){
+            winston.error(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
 }
