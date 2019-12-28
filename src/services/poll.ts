@@ -247,12 +247,11 @@ export default class PollService {
 
     public addMeetingTime = async (user, pollId: string, {meetingTime}) => {
         try{
-            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            const poll = await this.repository.findOne({ where: { owner: user, id: pollId },relations: ['participants']});
             if(poll){
                 let newMeetingTime = await MeetingTimeService.getInstance().createMeetingTime(meetingTime, pollId);
-                console.log(newMeetingTime)
                 await QualityInUseService.getInstance().pollChanged(pollId);
-                //TO DO : email
+                MailService.getInstance().addMeetingTimeNotificationMail(poll.participants.map(p => p.email),poll.title);
                 return newMeetingTime
             }else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);

@@ -62,4 +62,9 @@ export default class MailService {
         `User ${user} voted ${vote ? 'in favor of' : 'against'} this meeting.`
         );
     }
+    public addMeetingTimeNotificationMail = (to: string[], pollTitle: string) => {
+        this.sendMail(to, `add new meeting time for '${pollTitle}'`,
+            `A new meeting time added to this meeting by the owner. check it out !!`
+        );
+    }
 };
