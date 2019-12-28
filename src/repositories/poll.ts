@@ -33,7 +33,7 @@ export default class PollRepository extends Repository<Poll> {
 
     findOneThatUserParticipateOnItWithMeetingTimeVote(id, userEmail, meetingTimeId): Promise<Poll | undefined> {
         return this.manager.createQueryBuilder(Poll, 'poll')
-            .select(['poll.id', 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',
+            .select(['poll.id', 'poll.title' , 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',
                 'meetingTime.voteFor', 'meetingTime.voteAgainst', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
                 'vote.id', 'vote.voteFor', 'voter.id'])
             .leftJoin('poll.owner', 'owner')
