@@ -192,7 +192,9 @@ export default class PollService {
                 _.remove(poll.possibleMeetingTimes[0].votes, vote => !vote.voter);
                 poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
                 vote.voter = poll.participants[0] || poll.owner;
-                return await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
+                let voteMeetingTime = await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
+                MailService.getInstance().sendVoteNotificationMail(poll.owner.email,poll.title,vote.voter.email,vote.voteFor)
+                return voteMeetingTime
             } else if (!poll)
                 throw new ResourceNotFoundException('Poll');
             else if (poll.state > 0)
