@@ -2,6 +2,7 @@ import {getCustomRepository} from "typeorm";
 import {Transactional} from 'typeorm-transactional-cls-hooked';
 import moment from "moment";
 import _ from "lodash";
+import winston from "winston";
 import PollRepository from "../repositories/poll";
 import Poll from "../entities/poll";
 import MeetingTimeService from "./meetingTime";
@@ -12,7 +13,7 @@ import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
 import MailService from "./mail";
-import winston from "winston";
+import CommentService from "./comment";
 
 export default class PollService {
     private static service: PollService;
