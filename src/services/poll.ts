@@ -12,7 +12,7 @@ import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
 import MailService from "./mail";
-import CommentService from "./comment";
+import winston from "winston";
 
 export default class PollService {
     private static service: PollService;
@@ -52,14 +52,10 @@ export default class PollService {
 
     @Transactional()
     public async getPolls(user) {
-        // TODO: return  all polls that user owns or participates on them
         try {
-            return await this.repository.find({
-                where: {owner: user},
-                order: {createdAt: 'DESC'},
-                select: ["id", "owner", "room", "state", "title"]
-            });
+            return await this.repository.findAllThatUserParticipates(user.id);
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -82,6 +78,7 @@ export default class PollService {
             } else
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -99,6 +96,7 @@ export default class PollService {
             else if (poll.state !== 1)
                 throw new InvalidRequestException('First you must select a meeting time');
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -123,6 +121,7 @@ export default class PollService {
             else if (poll.state !== 1)
                 throw new InvalidRequestException('First you must select a meeting time');
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
                 if (ex.status === 503) {
@@ -178,7 +177,7 @@ export default class PollService {
             else if (poll.state > 0)
                 throw new InvalidRequestException('Poll already has a meeting time');
         } catch (ex) {
-            console.log(ex);
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -191,12 +190,8 @@ export default class PollService {
             if (poll && poll.state === 0 && (poll.owner || poll.participants.length > 0) && poll.possibleMeetingTimes.length > 0) {
                 _.remove(poll.possibleMeetingTimes[0].votes, vote => !vote.voter);
                 poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
-                vote.voter = poll.owner || poll.participants[0];
-                const votedForMeeting =  await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
-                console.log(vote)
-                console.log(poll)
-                MailService.getInstance().sendVoteNotificationMail(poll.owner.email,poll.title, vote.voter.email, vote.voteFor);
-                return votedForMeeting
+                vote.voter = poll.participants[0] || poll.owner;
+                return await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
             } else if (!poll)
                 throw new ResourceNotFoundException('Poll');
             else if (poll.state > 0)
@@ -206,7 +201,7 @@ export default class PollService {
             else if (poll.possibleMeetingTimes.length === 0)
                 throw new InvalidRequestException(`There is no meetingTime with id '${vote.meetingTimeId}' for poll`);
         } catch (ex) {
-            console.log(ex);
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
