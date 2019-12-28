@@ -2,6 +2,7 @@ import {Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany}
 import BaseEntity from "./base";
 import MeetingTime from "./meetingTime";
 import User from "./user";
+import Comment from "./comment";
 
 @Entity('polls')
 export default class Poll extends BaseEntity {
@@ -35,4 +36,7 @@ export default class Poll extends BaseEntity {
         }
     })
     public participants: User[];
+
+    @OneToMany(type => Comment, comment => comment.poll)
+    public comments: Comment[];
 }

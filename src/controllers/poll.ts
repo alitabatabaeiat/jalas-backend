@@ -2,7 +2,13 @@ import Controller from './controller';
 import PollService from '../services/poll';
 import validationMiddleware from "../middlewares/validation";
 import authMiddleware from "../middlewares/auth";
-import {createPollSchema, reserveRoomSchema, selectMeetingTime, voteMeetingTime} from "../validations/poll";
+import {
+    createCommentSchema,
+    createPollSchema,
+    reserveRoomSchema,
+    selectMeetingTime,
+    voteMeetingTime
+} from "../validations/poll";
 import {idSchema} from "../validations/common";
 
 export default class PollController extends Controller {
@@ -52,6 +58,13 @@ export default class PollController extends Controller {
                 params: idSchema(),
                 body: reserveRoomSchema
             }), PollController.reserveRoom]
+        }, {
+            method: 'POST',
+            path: '/:id/comments',
+            handlers: [authMiddleware, validationMiddleware({
+                params: idSchema(),
+                body: createCommentSchema
+            }), PollController.createComment]
         }];
     };
 
@@ -101,5 +114,11 @@ export default class PollController extends Controller {
         const {user, params} = req;
         const response = await PollService.getInstance().removePoll(user, params.id);
         res.send('Poll removed successfully');
+    }
+
+    private static createComment = async (req, res) => {
+        const {user, params, body} = req;
+        const response = await PollService.getInstance().createComment(user, params.id, body);
+        res.send(response);
     }
 }

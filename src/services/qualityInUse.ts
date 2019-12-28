@@ -45,10 +45,18 @@ export default class QualityInUseService {
     public async getNumberOfReservedRooms() {
         let error;
         try {
-            let qualityInUse = await this.repository.findOne({where: {title: 'reserveRoom'}});
-            return {
-                numberOfReservedRooms: qualityInUse ? parseInt(qualityInUse.column1) : 0
-            };
+            let qualityInUseRoom = await this.repository.findOne({where: {title: 'reserveRoom'}});
+            let qualityInUseChangedPolls = await this.getNumberOfChangedPolls()
+            let qualityInUseGetAverageCreationTime = await this.getAverageCreationTime()
+            console.log(qualityInUseChangedPolls)
+            console.log(qualityInUseGetAverageCreationTime)
+            let qualityInUse = {
+                'reservedRooms': qualityInUseRoom ? parseInt(qualityInUseRoom.column1) : 0,
+                'changedPolls': qualityInUseChangedPolls.numberOfChangedPolls,
+                'pollAverageCreationTime': qualityInUseGetAverageCreationTime.averageCreationTime
+            }
+            console.log(qualityInUse)
+            return qualityInUse
         } catch (ex) {
             if (ex instanceof HttpException)
                 throw ex;

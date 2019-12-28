@@ -42,6 +42,7 @@ process.on('unhandledRejection', ex => {
         } catch (ex) {}
         app.listen();
     } catch (error) {
+        console.log(error)
         winston.error('Error while connecting to the database');
         return error;
     }

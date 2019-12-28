@@ -46,4 +46,8 @@ const reserveRoomSchema = Joi.object({
     room: rules.room.required()
 });
 
-export {createPollSchema, selectMeetingTime, voteMeetingTime, reserveRoomSchema};
+const createCommentSchema = Joi.object({
+    text: Joi.string().required()
+});
+
+export {createPollSchema, selectMeetingTime, voteMeetingTime, reserveRoomSchema, createCommentSchema};
