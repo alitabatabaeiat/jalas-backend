@@ -57,4 +57,9 @@ export default class MailService {
             `${process.env.FRONTEND_URL}/polls/${pollId}`
         );
     };
+    public sendVoteNotificationMail = (to: string,pollTitle: string, user: string,vote: boolean) =>{
+        this.sendMail(to,`Vote For meeting '${pollTitle}'`,
+        `User ${user} voted ${vote ? 'in favor of' : 'against'} this meeting.`
+        );
+    }
 };
