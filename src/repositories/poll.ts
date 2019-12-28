@@ -17,7 +17,7 @@ export default class PollRepository extends Repository<Poll> {
         return this.manager.createQueryBuilder(Poll, 'poll')
             .select(['poll.id', 'poll.title', 'poll.room', 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',
                 'meetingTime.voteFor', 'meetingTime.voteAgainst', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
-                'vote.id', 'vote.voteFor', 'voter.id','comment.id','comment.text','writer.id'])
+                'vote.id', 'vote.voteFor', 'voter.id','comment.id','comment.text','writer.id', 'writer.fullName', 'writer.email'])
             .leftJoin('poll.owner', 'owner')
             .leftJoin('poll.participants', 'participant')
             .leftJoin('poll.possibleMeetingTimes', 'meetingTime')
