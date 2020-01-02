@@ -54,7 +54,9 @@ export default class PollService {
     @Transactional()
     public async getPolls(user) {
         try {
-            return await this.repository.findAllThatUserParticipates(user.id);
+            const polls = await this.repository.findAllThatUserParticipates(user.id);
+            polls.forEach(poll => (<any>poll).owner = poll.owner.id === user.id);
+            return polls;
         } catch (ex) {
             winston.error(ex);
             if (ex instanceof HttpException)

@@ -43,7 +43,7 @@ export default class MailService {
         this._smtpTransport.sendMail({
             from: process.env.EMAIL_ADDRESS,
             to, subject, text: message
-        });
+        }, (err) => console.log(err));
     };
 
     public sendRoomReservationUpdateMail = (to: string, pollTitle: string, room: number, successful: boolean) => {

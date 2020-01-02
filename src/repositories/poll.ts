@@ -5,9 +5,10 @@ import Poll from "../entities/poll";
 export default class PollRepository extends Repository<Poll> {
     async findAllThatUserParticipates(userId: string): Promise<Poll[] | undefined> {
         return this.manager.createQueryBuilder(Poll, 'poll')
-            .select(['poll.id', 'poll.title', 'poll.room', 'poll.state'])
+            .select(['poll.id', 'poll.title', 'poll.room', 'poll.state', 'owner.id'])
+            .leftJoin('poll.owner', 'owner')
             .leftJoin('poll.participants', 'participant', 'participant.id = :userId')
-            .where('poll.owner = :userId')
+            .where('owner.id = :userId')
             .orWhere('participant.id = :userId')
             .setParameter('userId', userId)
             .getMany();

@@ -2,7 +2,7 @@ import Joi from '@hapi/joi';
 import {commonRules} from "./common";
 
 const rules = {
-    title: Joi.string().regex(/^[\u0600-\u06FF ]+$/),
+    title: Joi.string(),
     room: Joi.number().positive(),
     state: Joi.number().min(0).max(3),
     roomRequestedAt: Joi.date().iso(),
