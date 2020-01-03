@@ -47,7 +47,12 @@ const reserveRoomSchema = Joi.object({
 });
 
 const createCommentSchema = Joi.object({
-    text: Joi.string().required()
+    text: Joi.string().required(),
+    replyTo: commonRules.id
+});
+
+const removeCommentSchema = Joi.object({
+    commentId: commonRules.id.required()
 });
 
 const addMeetingTimeSchema = Joi.object({
@@ -57,4 +62,4 @@ const addMeetingTimeSchema = Joi.object({
     }).required()
 })
 
-export { createPollSchema, selectMeetingTime, voteMeetingTime, reserveRoomSchema, createCommentSchema, addMeetingTimeSchema};
+export { createPollSchema, selectMeetingTime, voteMeetingTime, reserveRoomSchema, createCommentSchema, removeCommentSchema, addMeetingTimeSchema};

@@ -45,6 +45,7 @@ export default class PollService {
             MailService.getInstance().sendPollURL([owner.email, ...poll.participants], newPoll.id, poll.title);
             return newPoll;
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -54,8 +55,8 @@ export default class PollService {
     @Transactional()
     public async getPolls(user) {
         try {
-            const polls = await this.repository.findAllThatUserParticipates(user.id);
-            polls.forEach(poll => (<any>poll).owner = poll.owner.id === user.id);
+            const polls: any = await this.repository.findThatUserParticipates(user.id);
+            polls.forEach(poll => poll.owner = poll.owner.id === user.id);
             return polls;
         } catch (ex) {
             winston.error(ex);
@@ -68,8 +69,9 @@ export default class PollService {
     @Transactional()
     public async getPoll(user, pollId: string) {
         try {
-            const poll = await this.repository.findOneThatUserParticipateOnIt(pollId, user.email);
+            const poll = await this.repository.findOneThatUserParticipatesWithRelations(pollId, user.email);
             if (poll) {
+                poll.comments = await CommentService.getInstance().getComments(poll.id);
                 poll.possibleMeetingTimes.forEach(meetingTime =>
                     _.remove(meetingTime.votes, vote => {
                         const mustRemove = !vote.voter;
@@ -195,7 +197,7 @@ export default class PollService {
                 poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
                 vote.voter = poll.participants[0] || poll.owner;
                 let voteMeetingTime = await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
-                MailService.getInstance().sendVoteNotificationMail(poll.owner.email,poll.title,vote.voter.email,vote.voteFor)
+                MailService.getInstance().sendVoteNotificationMail(poll.owner.email, poll.title, vote.voter.email, vote.voteFor)
                 return voteMeetingTime
             } else if (!poll)
                 throw new ResourceNotFoundException('Poll');
@@ -232,12 +234,11 @@ export default class PollService {
     };
 
     @Transactional()
-    public async createComment(user, pollId: any, {text}) {
+    public async createComment(user, pollId: any, {text, replyTo}) {
         try {
-            // TODO: must change it
-            const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
+            const poll: any = await this.repository.findThatUserParticipates(pollId, user.id);
             if (poll) {
-                (<any>poll).newComment = await CommentService.getInstance().createComment(user, poll, text);
+                poll.newComment = await CommentService.getInstance().createComment(user, poll, text, replyTo);
                 return poll;
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
@@ -249,17 +250,34 @@ export default class PollService {
         }
     }
 
+    @Transactional()
+    public async removeComment(user, pollId: any, {commentId}) {
+        try {
+            const poll: any = await this.repository.findThatUserParticipates(pollId, user.id);
+            if (poll) {
+                await CommentService.getInstance().removeComment(commentId, user.id, poll.owner.id === user.id);
+                return 'Comment removed successfully';
+            } else if (!poll)
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+        } catch (ex) {
+            winston.error(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
+
     public addMeetingTime = async (user, pollId: string, {meetingTime}) => {
-        try{
-            const poll = await this.repository.findOne({ where: { owner: user, id: pollId },relations: ['participants']});
-            if(poll){
+        try {
+            const poll = await this.repository.findOne({where: {owner: user, id: pollId}, relations: ['participants']});
+            if (poll) {
                 let newMeetingTime = await MeetingTimeService.getInstance().createMeetingTime(meetingTime, pollId);
                 await QualityInUseService.getInstance().pollChanged(pollId);
-                MailService.getInstance().addMeetingTimeNotificationMail(poll.participants.map(p => p.email),poll.title);
+                MailService.getInstance().addMeetingTimeNotificationMail(poll.participants.map(p => p.email), poll.title);
                 return newMeetingTime
-            }else if (!poll)
+            } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
-        }catch (ex){
+        } catch (ex) {
             winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
