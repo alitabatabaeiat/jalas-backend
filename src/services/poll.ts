@@ -45,6 +45,7 @@ export default class PollService {
             MailService.getInstance().sendPollURL([owner.email, ...poll.participants], newPoll.id, poll.title);
             return newPoll;
         } catch (ex) {
+            winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -70,6 +71,7 @@ export default class PollService {
         try {
             const poll = await this.repository.findOneThatUserParticipateOnIt(pollId, user.email);
             if (poll) {
+                poll.comments = await CommentService.getInstance().getComments(poll.id);
                 poll.possibleMeetingTimes.forEach(meetingTime =>
                     _.remove(meetingTime.votes, vote => {
                         const mustRemove = !vote.voter;
@@ -232,12 +234,12 @@ export default class PollService {
     };
 
     @Transactional()
-    public async createComment(user, pollId: any, {text}) {
+    public async createComment(user, pollId: any, {text, replyTo}) {
         try {
             // TODO: must change it
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll) {
-                (<any>poll).newComment = await CommentService.getInstance().createComment(user, poll, text);
+                (<any>poll).newComment = await CommentService.getInstance().createComment(user, poll, text, replyTo);
                 return poll;
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);

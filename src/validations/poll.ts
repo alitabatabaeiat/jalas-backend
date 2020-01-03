@@ -47,7 +47,8 @@ const reserveRoomSchema = Joi.object({
 });
 
 const createCommentSchema = Joi.object({
-    text: Joi.string().required()
+    text: Joi.string().required(),
+    replyTo: commonRules.id
 });
 
 const addMeetingTimeSchema = Joi.object({

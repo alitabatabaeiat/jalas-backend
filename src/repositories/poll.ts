@@ -3,7 +3,7 @@ import Poll from "../entities/poll";
 
 @EntityRepository(Poll)
 export default class PollRepository extends Repository<Poll> {
-    async findAllThatUserParticipates(userId: string): Promise<Poll[] | undefined> {
+    findAllThatUserParticipates(userId: string): Promise<Poll[] | undefined> {
         return this.manager.createQueryBuilder(Poll, 'poll')
             .select(['poll.id', 'poll.title', 'poll.room', 'poll.state', 'owner.id'])
             .leftJoin('poll.owner', 'owner')
@@ -18,14 +18,12 @@ export default class PollRepository extends Repository<Poll> {
         return this.manager.createQueryBuilder(Poll, 'poll')
             .select(['poll.id', 'poll.title', 'poll.room', 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',
                 'meetingTime.voteFor', 'meetingTime.voteAgainst', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
-                'vote.id', 'vote.voteFor', 'voter.id','comment.id','comment.text','writer.id', 'writer.fullName', 'writer.email'])
+                'vote.id', 'vote.voteFor', 'voter.id'])
             .leftJoin('poll.owner', 'owner')
             .leftJoin('poll.participants', 'participant')
             .leftJoin('poll.possibleMeetingTimes', 'meetingTime')
             .leftJoin('meetingTime.votes', 'vote')
             .leftJoin('vote.voter', 'voter', 'voter.email = :userEmail')
-            .leftJoin('poll.comments', 'comment')
-            .leftJoin('comment.writer','writer','writer.email = :userEmail')
             .where('poll.id = :id')
             .andWhere('(owner.email = :userEmail OR participant.email = :userEmail)')
             .setParameters({id, userEmail})
