@@ -236,10 +236,27 @@ export default class PollService {
     @Transactional()
     public async createComment(user, pollId: any, {text, replyTo}) {
         try {
-            const poll = await this.repository.findThatUserParticipates(pollId, user.id);
+            const poll: any = await this.repository.findThatUserParticipates(pollId, user.id);
             if (poll) {
-                (<any>poll).newComment = await CommentService.getInstance().createComment(user, poll, text, replyTo);
+                poll.newComment = await CommentService.getInstance().createComment(user, poll, text, replyTo);
                 return poll;
+            } else if (!poll)
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+        } catch (ex) {
+            winston.error(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
+
+    @Transactional()
+    public async removeComment(user, pollId: any, {commentId}) {
+        try {
+            const poll: any = await this.repository.findThatUserParticipates(pollId, user.id);
+            if (poll) {
+                await CommentService.getInstance().removeComment(commentId, user.id, poll.owner.id === user.id);
+                return 'Comment removed successfully';
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
         } catch (ex) {

@@ -49,11 +49,31 @@ export default class CommentService {
     public async getComments(pollId: string) {
         try {
             const commentsAndReplies: any = await this.repository.findByPoll(pollId);
-            console.log(commentsAndReplies)
             const comments = _.keyBy(_.filter(commentsAndReplies, comment => !comment.replyTo), 'id');
             const replies = _.keyBy(_.filter(commentsAndReplies, comment => comment.replyTo), 'id');
             _.forEachRight(replies, reply => (comments[reply.replyTo] || replies[reply.replyTo]).replies.push(reply));
             return _.values(comments);
+        } catch (ex) {
+            winston.error(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
+
+    public async removeComment(id: string, userId, force: boolean = false) {
+        try {
+            const comment = await this.repository.findOne(id, {
+                loadRelationIds: {
+                    relations: ['writer']
+                }
+            });
+            if (comment && (comment.writer === userId || force))
+                return await this.repository.delete(comment.id);
+            else if (!comment)
+                throw new ResourceNotFoundException('Comment', 'id', id);
+            else if (comment.writer !== userId)
+                throw new HttpException(400, `You don't have permission to delete this comment`);
         } catch (ex) {
             winston.error(ex);
             if (ex instanceof HttpException)
