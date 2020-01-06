@@ -267,6 +267,18 @@ export default class PollService {
         }
     }
 
+    public async updateComment(user, id: any, {commentId, text}) {
+        try {
+            const comment = await CommentService.getInstance().updateComment(commentId, user.id, text);
+            return {comment};
+        } catch (ex) {
+            winston.error(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
+
     public addMeetingTime = async (user, pollId: string, {meetingTime}) => {
         try {
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}, relations: ['participants']});
@@ -284,4 +296,5 @@ export default class PollService {
             throw new HttpException();
         }
     }
+
 }
