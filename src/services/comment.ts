@@ -81,4 +81,27 @@ export default class CommentService {
             throw new HttpException();
         }
     }
+
+    public async updateComment(id: string, userId, newText: string) {
+        try {
+            const comment = await this.repository.findOne(id, {
+                loadRelationIds: {
+                    relations: ['writer']
+                }
+            });
+            if (comment && comment.writer === userId) {
+                await this.repository.update(comment.id, {text: newText});
+                return _.omit(comment, ['createdAt', 'updatedAt']);
+            }
+            else if (!comment)
+                throw new ResourceNotFoundException('Comment', 'id', id);
+            else if (comment.writer !== userId)
+                throw new HttpException(400, `You don't have permission to update this comment`);
+        } catch (ex) {
+            winston.error(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
 }
