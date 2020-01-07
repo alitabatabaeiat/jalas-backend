@@ -63,27 +63,6 @@ export default class PollController extends Controller {
             }), PollController.reserveRoom]
         }, {
             method: 'POST',
-            path: '/:id/comments',
-            handlers: [authMiddleware, validationMiddleware({
-                params: idSchema(),
-                body: createCommentSchema
-            }), PollController.createComment]
-        }, {
-            method: 'PATCH',
-            path: '/:id/comments',
-            handlers: [authMiddleware, validationMiddleware({
-                params: idSchema(),
-                body: updateCommentSchema
-            }), PollController.updateComment]
-        }, {
-            method: 'DELETE',
-            path: '/:id/comments',
-            handlers: [authMiddleware, validationMiddleware({
-                params: idSchema(),
-                body: removeCommentSchema
-            }), PollController.removeComment]
-        }, {
-            method: 'POST',
             path: '/:id/meeting-times',
             handlers: [authMiddleware, validationMiddleware({
                 params: idSchema(),
@@ -100,8 +79,8 @@ export default class PollController extends Controller {
 
     private static getPoll = async (req, res) => {
         const {user, params} = req;
-        const polls = await PollService.getInstance().getPoll(user, params.id);
-        res.send(polls);
+        const poll = await PollService.getInstance().getPoll(user, params.id);
+        res.send(poll);
     };
 
     private static getAvailableRooms = async (req, res) => {
@@ -138,24 +117,6 @@ export default class PollController extends Controller {
         const {user, params} = req;
         const response = await PollService.getInstance().removePoll(user, params.id);
         res.send('Poll removed successfully');
-    }
-
-    private static createComment = async (req, res) => {
-        const {user, params, body} = req;
-        const response = await PollService.getInstance().createComment(user, params.id, body);
-        res.send(response);
-    }
-
-    private static removeComment = async (req, res) => {
-        const {user, params, body} = req;
-        const response = await PollService.getInstance().removeComment(user, params.id, body);
-        res.send(response);
-    }
-
-    private static updateComment = async (req, res) => {
-        const {user, params, body} = req;
-        const response = await PollService.getInstance().updateComment(user, params.id, body);
-        res.send(response);
     }
 
     private static addMeetingTime = async (req, res) => {

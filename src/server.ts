@@ -11,6 +11,7 @@ import AuthController from "./controllers/auth";
 import QualityInUseController from "./controllers/qualityInUse";
 import UserService from "./services/user";
 import winston from "winston";
+import CommentController from "./controllers/comment";
 
 process.on('unhandledRejection', ex => {
     throw ex
@@ -28,6 +29,7 @@ process.on('unhandledRejection', ex => {
         const controllers = [
             new AuthController(),
             new PollController(),
+            new CommentController(),
             new QualityInUseController()
         ];
         const app = new App(controllers);
@@ -42,7 +44,6 @@ process.on('unhandledRejection', ex => {
         } catch (ex) {}
         app.listen();
     } catch (error) {
-        console.log(error)
         winston.error('Error while connecting to the database');
         return error;
     }

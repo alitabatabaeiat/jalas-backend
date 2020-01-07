@@ -52,7 +52,6 @@ export default class PollService {
         }
     };
 
-    @Transactional()
     public async getPolls(user) {
         try {
             const polls: any = await this.repository.findThatUserParticipates(user.id);
@@ -66,12 +65,10 @@ export default class PollService {
         }
     }
 
-    @Transactional()
-    public async getPoll(user, pollId: string) {
+    public async getPoll(user, pollId) {
         try {
             const poll = await this.repository.findOneThatUserParticipatesWithRelations(pollId, user.email);
             if (poll) {
-                poll.comments = await CommentService.getInstance().getComments(poll.id);
                 poll.possibleMeetingTimes.forEach(meetingTime =>
                     _.remove(meetingTime.votes, vote => {
                         const mustRemove = !vote.voter;
@@ -232,52 +229,6 @@ export default class PollService {
             throw new HttpException();
         }
     };
-
-    @Transactional()
-    public async createComment(user, pollId: any, {text, replyTo}) {
-        try {
-            const poll: any = await this.repository.findThatUserParticipates(pollId, user.id);
-            if (poll) {
-                poll.newComment = await CommentService.getInstance().createComment(user, poll, text, replyTo);
-                return poll;
-            } else if (!poll)
-                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
-        } catch (ex) {
-            winston.error(ex);
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
-    }
-
-    @Transactional()
-    public async removeComment(user, pollId: any, {commentId}) {
-        try {
-            const poll: any = await this.repository.findThatUserParticipates(pollId, user.id);
-            if (poll) {
-                await CommentService.getInstance().removeComment(commentId, user.id, poll.owner.id === user.id);
-                return 'Comment removed successfully';
-            } else if (!poll)
-                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
-        } catch (ex) {
-            winston.error(ex);
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
-    }
-
-    public async updateComment(user, id: any, {commentId, text}) {
-        try {
-            const comment = await CommentService.getInstance().updateComment(commentId, user.id, text);
-            return {comment};
-        } catch (ex) {
-            winston.error(ex);
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
-    }
 
     public addMeetingTime = async (user, pollId: string, {meetingTime}) => {
         try {
