@@ -4,7 +4,7 @@ stages:
   - build
   - unit test
   - integration test
-    - deploy
+  - deploy
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
