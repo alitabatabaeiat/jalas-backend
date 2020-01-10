@@ -248,4 +248,24 @@ export default class PollService {
         }
     }
 
+    public removeMeetingTime = async (user, pollId: string, { meetingTime }) => {
+        try {
+            const poll = await this.repository.findOne({ where: { owner: user, id: pollId }});
+            if (poll) {
+                let oldMeetingTime = await MeetingTimeService.getInstance().removeMeetingTime(meetingTime.id)
+                console.log(oldMeetingTime)
+                await QualityInUseService.getInstance().pollChanged(pollId);
+                MailService.getInstance().removeMeetingTimeNotificationMail(oldMeetingTime.votes.map(p => p.voter.email), poll.title);
+                return `meeting time '${oldMeetingTime.id}' removed successfully`
+            } else if (!poll)
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+        } catch (ex) {
+            console.log(ex)
+            winston.error(ex);
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
+
 }

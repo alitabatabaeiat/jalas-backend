@@ -67,4 +67,9 @@ export default class MailService {
             `A new meeting time added to this meeting by the owner. check it out !!`
         );
     }
+    public removeMeetingTimeNotificationMail = (to: string[], pollTitle: string) => {
+        this.sendMail(to, `remove meeting time from '${pollTitle}'`,
+            `The meeting time you voted has been deleted.`
+        );
+    }
 };
