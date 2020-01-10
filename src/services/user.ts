@@ -4,6 +4,8 @@ import UserRepository from "../repositories/user";
 import User from "../entities/user";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import ResourceNotFoundException from "../exceptions/resourceNotFoundException";
+import NotificationSettingService from "./notificationSetting";
+import { Transactional } from "typeorm-transactional-cls-hooked";
 
 
 export default class UserService {
@@ -22,6 +24,7 @@ export default class UserService {
 
     private static _getInstance = (): UserService => new UserService();
 
+    @Transactional()
     public async createUser(user) {
         try {
             const userExist = await this.repository.findOne({email: user.email}, {select: ['id']});
@@ -31,6 +34,7 @@ export default class UserService {
                 newUser.password = '123456';
                 newUser.fullName = user.fullName;
                 await this.repository.insert(newUser);
+                await NotificationSettingService.getInstance().createNotificationSetting(newUser);
                 return 'User created successfully';
             } else
                 throw new InvalidRequestException(`User with email '${user.email} exists'`);
