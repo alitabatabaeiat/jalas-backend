@@ -48,7 +48,8 @@ process.on('unhandledRejection', ex => {
         }
         app.listen();
     } catch (error) {
-        winston.error('Error while connecting to the database');
+        winston.error(error);
+        winston.error(`Error while connecting to database '${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}'`);
         return error;
     }
 })();
