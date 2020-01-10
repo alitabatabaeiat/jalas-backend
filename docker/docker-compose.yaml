@@ -3,15 +3,17 @@ services:
   nginx:
     links:
       - node:node
-    container_name: jalas-nginx
+    container_name: jalas-backend-nginx
     build: ./nginx
+    image: jalas-backend-nginx
     ports:
       - "80:80"
     depends_on:
       - node
 
   node:
-    container_name: jalas-node
+    container_name: jalas-backend-node
     build:
       context: ../
       dockerfile: docker/node/Dockerfile
+    image: jalas-backend-node
