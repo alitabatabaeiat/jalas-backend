@@ -49,7 +49,6 @@ export default class MailService {
 
     public sendRoomReservationUpdateMail = async (to: string, pollTitle: string, room: number, successful: boolean) => {
         to = await NotificationSettingService.isNotificationEnableFor(to, 'reserveRoom');
-        console.log(to);
         if (to)
             this.sendMail(to, `Reservation state changed(${pollTitle})`,
                 `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`);
@@ -78,7 +77,8 @@ export default class MailService {
         );
     };
 
-    public addMeetingTimeNotificationMail = (to: string[], pollTitle: string) => {
+    public addMeetingTimeNotificationMail = async (to: any[], pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'addMeetingTime');
         this.sendMail(to, `add new meeting time for '${pollTitle}'`,
             `A new meeting time added to this meeting by the owner. check it out !!`
         );

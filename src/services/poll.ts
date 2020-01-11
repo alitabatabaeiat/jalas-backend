@@ -236,7 +236,7 @@ export default class PollService {
             if (poll) {
                 let newMeetingTime = await MeetingTimeService.getInstance().createMeetingTime(meetingTime, pollId);
                 await QualityInUseService.getInstance().pollChanged(pollId);
-                MailService.getInstance().addMeetingTimeNotificationMail(poll.participants.map(p => p.email), poll.title);
+                MailService.getInstance().addMeetingTimeNotificationMail(poll.participants, poll.title);
                 return newMeetingTime
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
