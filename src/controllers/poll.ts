@@ -148,11 +148,11 @@ export default class PollController extends Controller {
     private static closePoll = async (req, res) => {
         const { user, params } = req;
         const response = await PollService.getInstance().closePoll(user, params.id);
-        res.send('Poll closed successfully');
+        res.send(response);
     }
     private static cancelMeeting = async (req, res) => {
         const { user, params } = req;
         const response = await PollService.getInstance().cancelMeeting(user, params.id);
-        res.send('Meeting canceled successfully');
+        res.send(response);
     }
 }
