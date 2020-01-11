@@ -12,6 +12,7 @@ import QualityInUseController from "./controllers/qualityInUse";
 import UserService from "./services/user";
 import winston from "winston";
 import CommentController from "./controllers/comment";
+import NotificationSettingController from "./controllers/notificationSetting";
 
 process.on('unhandledRejection', ex => {
     throw ex
@@ -30,6 +31,7 @@ process.on('unhandledRejection', ex => {
             new AuthController(),
             new PollController(),
             new CommentController(),
+            new NotificationSettingController(),
             new QualityInUseController()
         ];
         const app = new App(controllers);
@@ -41,10 +43,13 @@ process.on('unhandledRejection', ex => {
             await UserService.getInstance().createUser({email: 'm.nourbakhsh75@gmail.com', fullName: 'مهرداد نوربخش'});
             await UserService.getInstance().createUser({email: 'a.tabatabaei97@icloud.com', fullName: 'علی طباطبایی ۲'});
             await UserService.getInstance().createUser({email: 'a.tabatabaei97@hotmail.com', fullName: 'علی طباطبایی ۳'});
-        } catch (ex) {}
+        } catch (ex) {
+            console.log(ex);
+        }
         app.listen();
     } catch (error) {
-        winston.error('Error while connecting to the database');
+        winston.error(error);
+        winston.error(`Error while connecting to database '${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}'`);
         return error;
     }
 })();

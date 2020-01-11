@@ -4,7 +4,7 @@ services:
     container_name: jalas-postgres
     build: .
     ports:
-      - "2000:5432"
+      - "4000:5432"
     volumes:
       - pg-data:/var/lib/postgresql/data
     env_file:
@@ -16,7 +16,7 @@ services:
     container_name: jalas-pgadmin
     image: dpage/pgadmin4
     ports:
-      - "2001:80"
+      - "4001:80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     env_file:
