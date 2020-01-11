@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import {google} from 'googleapis';
+import NotificationSettingService from "./notificationSetting";
 
 export default class MailService {
     private static service: MailService;
@@ -46,23 +47,38 @@ export default class MailService {
         }, (err) => console.log(err));
     };
 
-    public sendRoomReservationUpdateMail = (to: string, pollTitle: string, room: number, successful: boolean) => {
-        this.sendMail(to, `Reservation state changed(${pollTitle})`,
-            `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`);
+    public sendRoomReservationUpdateMail = async (to: string, pollTitle: string, room: number, successful: boolean) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'reserveRoom');
+        if (to)
+            this.sendMail(to, `Reservation state changed(${pollTitle})`,
+                `Room ${room} ${successful ? 'successfully reserved.' : 'is already reserved! Please try another room.'}`);
     };
 
-    public sendPollURL = (to: string[], pollId: string, pollTitle: string) => {
+    public sendPollURLAfterCreatePoll = async (to: any[], pollId: string, pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'createPoll');
         this.sendMail(to, `Poll For meeting '${pollTitle}'`,
             `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.` +
             `${process.env.FRONTEND_URL}/polls/${pollId}`
         );
     };
-    public sendVoteNotificationMail = (to: string,pollTitle: string, user: string,vote: boolean) =>{
-        this.sendMail(to,`Vote For meeting '${pollTitle}'`,
-        `User ${user} voted ${vote ? 'in favor of' : 'against'} this meeting.`
+
+    public sendPollURLAfterSelectMeetingTime = async (to: any[], pollId: string, pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'selectMeetingTime');
+        this.sendMail(to, `Poll For meeting '${pollTitle}'`,
+            `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.` +
+            `${process.env.FRONTEND_URL}/polls/${pollId}`
         );
-    }
-    public addMeetingTimeNotificationMail = (to: string[], pollTitle: string) => {
+    };
+
+    public sendVoteNotificationMail = async (to: any, pollTitle: string, user: string, vote: boolean) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'vote');
+        this.sendMail(to, `Vote For meeting '${pollTitle}'`,
+            `User ${user} voted ${vote ? 'in favor of' : 'against'} this meeting.`
+        );
+    };
+
+    public addMeetingTimeNotificationMail = async (to: any[], pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'addMeetingTime');
         this.sendMail(to, `add new meeting time for '${pollTitle}'`,
             `A new meeting time added to this meeting by the owner. check it out !!`
         );
