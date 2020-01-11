@@ -56,31 +56,35 @@ export default class MailService {
 
     public sendPollURLAfterCreatePoll = async (to: any[], pollId: string, pollTitle: string) => {
         to = await NotificationSettingService.isNotificationEnableFor(to, 'createPoll');
-        this.sendMail(to, `Poll For meeting '${pollTitle}'`,
-            `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.` +
-            `${process.env.FRONTEND_URL}/polls/${pollId}`
-        );
+        if (to)
+            this.sendMail(to, `Poll For meeting '${pollTitle}'`,
+                `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.` +
+                `${process.env.FRONTEND_URL}/polls/${pollId}`
+            );
     };
 
     public sendPollURLAfterSelectMeetingTime = async (to: any[], pollId: string, pollTitle: string) => {
         to = await NotificationSettingService.isNotificationEnableFor(to, 'selectMeetingTime');
-        this.sendMail(to, `Poll For meeting '${pollTitle}'`,
-            `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.` +
-            `${process.env.FRONTEND_URL}/polls/${pollId}`
-        );
+        if (to)
+            this.sendMail(to, `Poll For meeting '${pollTitle}'`,
+                `Hi there, you can checkout the link below to see all details about meeting '${pollTitle}' that ${to[0]} arranged.` +
+                `${process.env.FRONTEND_URL}/polls/${pollId}`
+            );
     };
 
     public sendVoteNotificationMail = async (to: any, pollTitle: string, user: string, vote: boolean) => {
         to = await NotificationSettingService.isNotificationEnableFor(to, 'vote');
-        this.sendMail(to, `Vote For meeting '${pollTitle}'`,
-            `User ${user} voted ${vote ? 'in favor of' : 'against'} this meeting.`
-        );
+        if (to)
+            this.sendMail(to, `Vote For meeting '${pollTitle}'`,
+                `User ${user} voted ${vote ? 'in favor of' : 'against'} this meeting.`
+            );
     };
 
     public addMeetingTimeNotificationMail = async (to: any[], pollTitle: string) => {
         to = await NotificationSettingService.isNotificationEnableFor(to, 'addMeetingTime');
-        this.sendMail(to, `add new meeting time for '${pollTitle}'`,
-            `A new meeting time added to this meeting by the owner. check it out !!`
-        );
+        if (to)
+            this.sendMail(to, `add new meeting time for '${pollTitle}'`,
+                `A new meeting time added to this meeting by the owner. check it out !!`
+            );
     };
 };
