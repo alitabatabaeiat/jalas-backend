@@ -93,20 +93,34 @@ export default class MeetingTimeService {
         try {
             if (meetingTime.votes.length > 0) {
                 if (vote.voteFor !== meetingTime.votes[0].voteFor) {
-                    if (vote.voteFor) {
+                    if (vote.voteFor == 1) {
                         meetingTime.voteFor += 1;
-                        meetingTime.voteAgainst -= 1;
-                    } else {
-                        meetingTime.voteFor -= 1;
+                        if (meetingTime.votes[0].voteFor == -1)
+                            meetingTime.voteAgainst -= 1;
+                        else if (meetingTime.votes[0].voteFor == 0)
+                            meetingTime.voteAbstain -=1;
+                    } else if (vote.voteFor == -1){
                         meetingTime.voteAgainst += 1;
+                        if (meetingTime.votes[0].voteFor == 1)
+                            meetingTime.voteFor -= 1;
+                        else if (meetingTime.votes[0].voteFor == 0)
+                            meetingTime.voteAbstain -= 1;
+                    } else if (vote.voteFor == 0) {
+                        meetingTime.voteAbstain += 1;
+                        if (meetingTime.votes[0].voteFor == 1)
+                            meetingTime.voteFor -= 1;
+                        else if (meetingTime.votes[0].voteFor == -1)
+                            meetingTime.voteAgainst -= 1;
                     }
-                    meetingTime.votes[0].voteFor = !meetingTime.votes[0].voteFor;
+                    meetingTime.votes[0].voteFor = vote.voteFor;
                 } else
                     return meetingTime;
-            } else if (vote.voteFor)
+            } else if (vote.voteFor == 1)
                 meetingTime.voteFor += 1;
-            else
+            else if (vote.voteFor == -1)
                 meetingTime.voteAgainst += 1;
+            else if (vote.voteFor == 0)
+                meetingTime.voteAbstain +=1;
             const updatedMeetingTime = _.omit(meetingTime, ['id', 'votes']);
             await this.repository.update(meetingTime.id, updatedMeetingTime);
             const voteService = VoteService.getInstance();

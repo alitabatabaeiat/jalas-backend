@@ -11,7 +11,8 @@ import {
     addMeetingTimeSchema,
     removeCommentSchema,
     updateCommentSchema,
-    removeMeetingTimeSchema
+    removeMeetingTimeSchema,
+    addParticipantSchema
 } from "../validations/poll";
 import {idSchema} from "../validations/common";
 
@@ -84,6 +85,13 @@ export default class PollController extends Controller {
             method: 'PATCH',
             path: '/:id/cancel',
             handlers: [authMiddleware, validationMiddleware({ params: idSchema() }), PollController.cancelMeeting]
+        },{
+            method: 'POST',
+            path: '/:id/participants',
+            handlers: [authMiddleware, validationMiddleware({
+                params: idSchema(),
+                body: addParticipantSchema
+            }), PollController.addParticipant]
         }];
     };
 
@@ -153,6 +161,11 @@ export default class PollController extends Controller {
     private static cancelMeeting = async (req, res) => {
         const { user, params } = req;
         const response = await PollService.getInstance().cancelMeeting(user, params.id);
+        res.send(response);
+    }
+    private static addParticipant = async (req, res) => {
+        const { user, params,body } = req;
+        const response = await PollService.getInstance().addParticipant(user,params.id,body);
         res.send(response);
     }
 }

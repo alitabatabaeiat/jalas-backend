@@ -72,11 +72,11 @@ export default class MailService {
             );
     };
 
-    public sendVoteNotificationMail = async (to: any, pollTitle: string, user: string, vote: boolean) => {
+    public sendVoteNotificationMail = async (to: any, pollTitle: string, user: string) => {
         to = await NotificationSettingService.isNotificationEnableFor(to, 'vote');
         if (to)
             this.sendMail(to, `Vote For meeting '${pollTitle}'`,
-                `User ${user} voted ${vote ? 'in favor of' : 'against'} this meeting.`
+                `User ${user} voted for this meeting.`
             );
     };
 

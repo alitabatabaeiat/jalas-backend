@@ -215,7 +215,7 @@ export default class PollService {
                 poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
                 vote.voter = poll.participants[0] || poll.owner;
                 let voteMeetingTime = await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
-                MailService.getInstance().sendVoteNotificationMail(poll.owner, poll.title, vote.voter.email, vote.voteFor)
+                MailService.getInstance().sendVoteNotificationMail(poll.owner, poll.title, vote.voter.email)
                 return voteMeetingTime
             } else if (!poll)
                 throw new ResourceNotFoundException('Poll');
@@ -337,6 +337,25 @@ export default class PollService {
                 throw ex;
             throw new HttpException();
         }
+    }
+
+    
+    public addParticipant = async (owner, pollId: string, { user }) => {
+        try {
+            const poll = await this.repository.findOne({ where: { owner: owner, id: pollId }, relations: ['participants'] });
+            if(poll && poll.state < 2){
+                console.log(poll.participants)
+                let newUser = await UserService.getInstance().getUser(user.email)
+                console.log(newUser)
+            }else if(!poll){
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+            }
+        } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+        
     }
 
 }
