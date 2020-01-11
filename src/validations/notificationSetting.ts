@@ -4,7 +4,7 @@ import {commonRules} from "./common";
 const rules = {
     createPoll: Joi.boolean(),
     reserveRoom: Joi.boolean(),
-    chooseMeetingTime: Joi.boolean(),
+    selectMeetingTime: Joi.boolean(),
     vote: Joi.boolean(),
     addMeetingTime: Joi.boolean(),
     removeMeetingTime: Joi.boolean(),
@@ -16,7 +16,7 @@ const rules = {
 const updateNotificationSettingSchema = Joi.object({
     createPoll: rules.createPoll.required(),
     reserveRoom: rules.reserveRoom.required(),
-    chooseMeetingTime: rules.chooseMeetingTime.required(),
+    selectMeetingTime: rules.selectMeetingTime.required(),
     vote: rules.vote.required(),
     addMeetingTime: rules.addMeetingTime.required(),
     removeMeetingTime: rules.removeMeetingTime.required(),

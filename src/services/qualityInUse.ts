@@ -1,15 +1,17 @@
 import {getCustomRepository} from "typeorm";
 import {Transactional} from "typeorm-transactional-cls-hooked";
 import moment from "moment";
-import HttpException from "../exceptions/httpException";
 import QualityInUseRepository from "../repositories/qualityInUse";
 import QualityInUse from "../entities/qualityInUse";
+import UnAuthorizedException from "../exceptions/unAuthorizedException";
+import Service from "./service";
 
-export default class QualityInUseService {
+export default class QualityInUseService extends Service {
     private static service: QualityInUseService;
     private readonly repository: QualityInUseRepository;
 
     private constructor() {
+        super();
         this.repository = getCustomRepository(QualityInUseRepository);
     };
 
@@ -21,9 +23,22 @@ export default class QualityInUseService {
 
     private static _getInstance = (): QualityInUseService => new QualityInUseService();
 
+    public async getFullReport(user) {
+        return await this.catchErrors(async () => {
+            if (user.email === 'a.tabatabaei97@gmail.com')
+                return {
+                    reservedRooms: await this.getNumberOfReservedRooms(),
+                    changedPolls: await this.getNumberOfChangedPolls(),
+                    pollAverageCreationTime: await this.getAverageCreationTime()
+                };
+            else
+                throw new UnAuthorizedException('Admin privilege needed');
+        });
+    }
+
     @Transactional()
     public async reserveRoom() {
-        try {
+        return await this.catchErrors(async () => {
             let reserveRoom = await this.repository.findOne({where: {title: 'reserveRoom'}});
 
             if (reserveRoom)
@@ -34,39 +49,19 @@ export default class QualityInUseService {
                 reserveRoom.column1 = '1';
                 return await this.repository.insert(reserveRoom);
             }
-        } catch (ex) {
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
+        });
     }
 
-    @Transactional()
     public async getNumberOfReservedRooms() {
-        let error;
-        try {
+        return await this.catchErrors(async () => {
             let qualityInUseRoom = await this.repository.findOne({where: {title: 'reserveRoom'}});
-            let qualityInUseChangedPolls = await this.getNumberOfChangedPolls()
-            let qualityInUseGetAverageCreationTime = await this.getAverageCreationTime()
-            console.log(qualityInUseChangedPolls)
-            console.log(qualityInUseGetAverageCreationTime)
-            let qualityInUse = {
-                'reservedRooms': qualityInUseRoom ? parseInt(qualityInUseRoom.column1) : 0,
-                'changedPolls': qualityInUseChangedPolls.numberOfChangedPolls,
-                'pollAverageCreationTime': qualityInUseGetAverageCreationTime.averageCreationTime
-            }
-            console.log(qualityInUse)
-            return qualityInUse
-        } catch (ex) {
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
+            return qualityInUseRoom ? parseInt(qualityInUseRoom.column1) : 0;
+        });
     }
 
     @Transactional()
     public async pollChanged(pollId) {
-        try {
+        return await this.catchErrors(async () => {
             let pollChanged = await this.repository.findOne({where: {title: 'pollChanged', column1: pollId}});
 
             if (pollChanged)
@@ -77,31 +72,19 @@ export default class QualityInUseService {
                 pollChanged.column1 = pollId;
                 return await this.repository.insert(pollChanged);
             }
-        } catch (ex) {
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
+        });
     }
 
     public async getNumberOfChangedPolls() {
-        try {
-            let numberOfChangedPolls = (await this.repository.createQueryBuilder()
-                .where({title: 'pollChanged'})
-                .select('COUNT(id)').getRawOne()).count;
-            return {
-                numberOfChangedPolls: numberOfChangedPolls ? parseInt(numberOfChangedPolls) : 0
-            };
-        } catch (ex) {
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
+        return await this.catchErrors(async () => {
+            let changedPolls = await this.repository.countChangedPolls();
+            return changedPolls ? parseInt(changedPolls.count) : 0;
+        });
     }
 
     @Transactional()
     public async userEntersPollPage(pollId) {
-        try {
+        return await this.catchErrors(async () => {
             let pollCreationTime = await this.repository.findOne({where: {title: 'pollCreationTime', column1: pollId}});
 
             if (pollCreationTime) {
@@ -116,17 +99,12 @@ export default class QualityInUseService {
                 pollCreationTime.column2 = moment().toISOString();
                 return await this.repository.insert(pollCreationTime);
             }
-        } catch (ex) {
-            console.log(ex)
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
+        });
     }
 
     @Transactional()
     public async pollCreated(pollId) {
-        try {
+        return await this.catchErrors(async () => {
             let pollCreationTime = await this.repository.findOne({where: {title: 'pollCreationTime', column1: pollId}});
 
             if (pollCreationTime) {
@@ -139,25 +117,13 @@ export default class QualityInUseService {
                 }
             } else
                 return;
-        } catch (ex) {
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
+        });
     }
 
     public async getAverageCreationTime() {
-        try {
-            let averageCreationTime = (await this.repository.createQueryBuilder()
-                .where(`title = 'pollCreationTime' AND column2 ~ '^[0-9]*$'`)
-                .select('AVG(column2::INTEGER)').getRawOne()).avg;
-            return {
-                averageCreationTime: averageCreationTime ? parseInt(averageCreationTime) : 0
-            };
-        } catch (ex) {
-            if (ex instanceof HttpException)
-                throw ex;
-            throw new HttpException();
-        }
+        return await this.catchErrors(async () => {
+            let creationTime = await this.repository.averageCreationTime();
+            return creationTime ? parseInt(creationTime.avg) : 0;
+        });
     }
 }

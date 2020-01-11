@@ -13,11 +13,11 @@ import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
 import MailService from "./mail";
-import CommentService from "./comment";
 
 export default class PollService {
     private static service: PollService;
     private readonly repository: PollRepository;
+    private intervals = {};
 
     private constructor() {
         this.repository = getCustomRepository(PollRepository);
@@ -37,6 +37,7 @@ export default class PollService {
             let newPoll = new Poll();
             newPoll.title = poll.title;
             newPoll.owner = owner;
+            poll.participants = poll.participants.filter(p => p !== owner.email);
             newPoll.participants = await Promise.all(poll.participants.map(async participant =>
                 await UserService.getInstance().getUser(participant)
             ));
@@ -105,7 +106,6 @@ export default class PollService {
         }
     }
 
-    @Transactional()
     public async reserveRoom(user, pollId: string, {room}) {
         let poll, meetingTime;
         try {
@@ -129,36 +129,40 @@ export default class PollService {
             if (ex instanceof HttpException) {
                 // Reservation service unavailable
                 if (ex.status === 503) {
-                    await this.repository.update(pollId, {state: 2, room, roomRequestedAt: moment().toISOString()});
-                    let interval = setInterval(async () => {
-                        let status;
-                        try {
-                            await ReservationService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
-                            status = 200;
-                        } catch (ex) {
-                            status = ex.status;
-                        }
-                        if (interval) {
-                            if (status === 200) {
-                                clearInterval(interval);
-                                interval = null;
-                                await this.repository.update(pollId, {state: 3});
-                                await QualityInUseService.getInstance().reserveRoom();
-                                await QualityInUseService.getInstance().pollCreated(pollId);
-                                MailService.getInstance().sendRoomReservationUpdateMail(user, poll.title, room, true);
-                            } else if (status === 400) {
-                                clearInterval(interval);
-                                interval = null;
-                                await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
-                                MailService.getInstance().sendRoomReservationUpdateMail(user, poll.title, room, false);
-                            }
-                        }
-                    }, 10000);
+                    await this.repository.update(poll.id, {state: 2, room, roomRequestedAt: moment().toISOString()});
+                    this.intervals[poll.id] = setInterval(async () => this.retryReserveRoom(user, poll, meetingTime, room),
+                        20000);
                 }
                 throw ex;
             }
             throw new HttpException();
         }
+    }
+
+    @Transactional()
+    private async retryReserveRoom(user, poll, meetingTime, room) {
+        try {
+            if (this.intervals[poll.id]) {
+                await ReservationService.getInstance().reserveRoom(room, user, meetingTime.startsAt, meetingTime.endsAt);
+                this.clearInterval(poll.id);
+                await this.repository.update(poll.id, {state: 3});
+                await QualityInUseService.getInstance().reserveRoom();
+                await QualityInUseService.getInstance().pollCreated(poll.id);
+                MailService.getInstance().sendRoomReservationUpdateMail(user, poll.title, room, true);
+            }
+        } catch (ex) {
+            winston.error(ex);
+            if (this.intervals[poll.id] && ex.status === 400) {
+                this.clearInterval(poll.id);
+                await this.repository.update(poll.id, {state: 1, room: null, roomRequestedAt: null});
+                MailService.getInstance().sendRoomReservationUpdateMail(user, poll.title, room, false);
+            }
+        }
+    }
+
+    private clearInterval(id) {
+        clearInterval(this.intervals[id]);
+        delete this.intervals[id];
     }
 
     public selectMeetingTime = async (user, pollId: string, {meetingTime}) => {
@@ -237,6 +241,8 @@ export default class PollService {
         try {
             const poll = await this.repository.findOne({where: {owner: user, id: pollId}});
             if (poll && poll.state != 3) {
+                if (this.intervals[poll.id])
+                    this.clearInterval(poll.id);
                 await this.repository.delete(pollId);
                 await QualityInUseService.getInstance().pollChanged(pollId);
                 return `Poll '${poll.id}' removed successfully`;
