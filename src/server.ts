@@ -42,10 +42,8 @@ process.on('unhandledRejection', ex => {
             await UserService.getInstance().createUser({email: 'h.ghadimi1998@gmail.com', fullName: 'حبیب قدیمی'});
             await UserService.getInstance().createUser({email: 'm.nourbakhsh75@gmail.com', fullName: 'مهرداد نوربخش'});
             await UserService.getInstance().createUser({email: 'a.tabatabaei97@icloud.com', fullName: 'علی طباطبایی ۲'});
-            await UserService.getInstance().createUser({email: 'a.tabatabaei97@hotmail.com', fullName: 'علی طباطبایی ۳'});
-        } catch (ex) {
-            console.log(ex);
-        }
+            await UserService.getInstance().createUser({email: 'a.tabatabaei97@oulook.com', fullName: 'علی طباطبایی ۳'});
+        } catch (ex) {}
         app.listen();
     } catch (error) {
         winston.error(error);

@@ -42,7 +42,7 @@ export default class PollService {
             ));
             await this.repository.save(newPoll);
             newPoll.possibleMeetingTimes = await MeetingTimeService.getInstance().createMeetingTime(poll.possibleMeetingTimes, newPoll.id);
-            MailService.getInstance().sendPollURL([owner.email, ...poll.participants], newPoll.id, poll.title);
+            MailService.getInstance().sendPollURLAfterCreatePoll(newPoll.participants, newPoll.id, poll.title);
             return newPoll;
         } catch (ex) {
             winston.error(ex);
@@ -116,7 +116,7 @@ export default class PollService {
                 await this.repository.update(pollId, {state: 3, room, roomRequestedAt: moment().toISOString()});
                 await QualityInUseService.getInstance().reserveRoom();
                 await QualityInUseService.getInstance().pollCreated(pollId);
-                MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, true);
+                MailService.getInstance().sendRoomReservationUpdateMail(user, poll.title, room, true);
                 return result;
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
@@ -143,15 +143,15 @@ export default class PollService {
                                 await this.repository.update(pollId, {state: 3});
                                 await QualityInUseService.getInstance().reserveRoom();
                                 await QualityInUseService.getInstance().pollCreated(pollId);
-                                MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, true);
+                                MailService.getInstance().sendRoomReservationUpdateMail(user, poll.title, room, true);
                             } else if (status === 400) {
                                 clearInterval(interval);
                                 interval = null;
                                 await this.repository.update(pollId, {state: 1, room: null, roomRequestedAt: null});
-                                MailService.getInstance().sendRoomReservationUpdateMail(user.email, poll.title, room, false);
+                                MailService.getInstance().sendRoomReservationUpdateMail(user, poll.title, room, false);
                             }
                         }
-                    }, 1000);
+                    }, 10000);
                 }
                 throw ex;
             }
@@ -172,7 +172,7 @@ export default class PollService {
                 const updatedMeetingTime = await MeetingTimeService.getInstance().updateMeetingTime(pollId, meetingTime.id, meetingTime);
                 await QualityInUseService.getInstance().pollChanged(pollId);
                 await QualityInUseService.getInstance().userEntersPollPage(pollId);
-                MailService.getInstance().sendPollURL([user.email, ...poll.participants.map(p => p.email)], poll.id, poll.title);
+                MailService.getInstance().sendPollURLAfterSelectMeetingTime(poll.participants, poll.id, poll.title);
                 return updatedMeetingTime;
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
@@ -194,7 +194,7 @@ export default class PollService {
                 poll.possibleMeetingTimes[0].votes.forEach(vote => delete vote.voter);
                 vote.voter = poll.participants[0] || poll.owner;
                 let voteMeetingTime = await MeetingTimeService.getInstance().saveVote(poll.possibleMeetingTimes[0], vote);
-                MailService.getInstance().sendVoteNotificationMail(poll.owner.email, poll.title, vote.voter.email, vote.voteFor)
+                MailService.getInstance().sendVoteNotificationMail(poll.owner, poll.title, vote.voter.email, vote.voteFor)
                 return voteMeetingTime
             } else if (!poll)
                 throw new ResourceNotFoundException('Poll');
@@ -236,7 +236,7 @@ export default class PollService {
             if (poll) {
                 let newMeetingTime = await MeetingTimeService.getInstance().createMeetingTime(meetingTime, pollId);
                 await QualityInUseService.getInstance().pollChanged(pollId);
-                MailService.getInstance().addMeetingTimeNotificationMail(poll.participants.map(p => p.email), poll.title);
+                MailService.getInstance().addMeetingTimeNotificationMail(poll.participants, poll.title);
                 return newMeetingTime
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);

@@ -34,7 +34,7 @@ export default class NotificationSettingService {
                 if (notificationSetting)
                     NotificationSettingService.setNotificationSetting(newNotificationSetting, notificationSetting);
                 await this.repository.insert(newNotificationSetting);
-                return {notificationSetting: _.omit(newNotificationSetting, ['createdAt', 'updatedAt'])};
+                return _.omit(newNotificationSetting, ['createdAt', 'updatedAt']);
             } else
                 throw new InvalidRequestException(`Notification setting for the user exists`);
         } catch (ex) {
@@ -48,7 +48,7 @@ export default class NotificationSettingService {
     public async getUserNotificationSetting(user) {
         try {
             const notificationSetting = await this.repository.findOne(user.id);
-            return {notificationSetting: _.omit(notificationSetting, ['createdAt', 'updatedAt'])};
+            return _.omit(notificationSetting, ['createdAt', 'updatedAt']);
         } catch (ex) {
             winston.error(ex);
             if (ex instanceof HttpException)
@@ -63,7 +63,7 @@ export default class NotificationSettingService {
             if (notificationSettingInDb) {
                 await this.repository.update(user.id, notificationSetting);
                 NotificationSettingService.setNotificationSetting(notificationSettingInDb, notificationSetting);
-                return {notificationSetting: _.omit(notificationSettingInDb, ['createdAt', 'updatedAt'])};
+                return _.omit(notificationSettingInDb, ['createdAt', 'updatedAt']);
             } else {
                 throw new ResourceNotFoundException('NotificationSetting', 'id', user.id);
             }
@@ -85,5 +85,23 @@ export default class NotificationSettingService {
         notificationSettingInDb.cancelMeeting = notificationSetting.cancelMeeting;
         notificationSettingInDb.addParticipant = notificationSetting.addParticipant;
         notificationSettingInDb.closePoll = notificationSetting.closePoll;
+    }
+
+    static async isNotificationEnableFor(users: any | any[], settingName: string) {
+        try {
+            if (Array.isArray(users)) {
+                users = await Promise.all(users.map(async user => {
+                    const notificationSetting = await NotificationSettingService.getInstance().getUserNotificationSetting(user);
+                    return notificationSetting[settingName] ? user.email : null
+                }));
+                return users.filter(u => u);
+            } else {
+                const notificationSetting = await NotificationSettingService.getInstance().getUserNotificationSetting(users);
+                return notificationSetting[settingName] ? users.email : null
+            }
+        }
+        catch (ex) {
+            winston.error(ex);
+        }
     }
 }
