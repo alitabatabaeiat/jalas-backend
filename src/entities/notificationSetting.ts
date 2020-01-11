@@ -20,8 +20,8 @@ export default class NotificationSetting {
     @Column({name: 'reserve_room', default: true})
     public reserveRoom: boolean;
 
-    @Column({name: 'choose_meeting_time', default: true})
-    public chooseMeetingTime: boolean;
+    @Column({name: 'select_meeting_time', default: true})
+    public selectMeetingTime: boolean;
 
     @Column({name: 'vote', default: true})
     public vote: boolean;
