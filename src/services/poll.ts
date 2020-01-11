@@ -13,7 +13,6 @@ import QualityInUseService from "./qualityInUse";
 import InvalidRequestException from "../exceptions/invalidRequestException";
 import UserService from "./user";
 import MailService from "./mail";
-import CommentService from "./comment";
 
 export default class PollService {
     private static service: PollService;
@@ -37,6 +36,7 @@ export default class PollService {
             let newPoll = new Poll();
             newPoll.title = poll.title;
             newPoll.owner = owner;
+            poll.participants = poll.participants.filter(p => p !== owner.email);
             newPoll.participants = await Promise.all(poll.participants.map(async participant =>
                 await UserService.getInstance().getUser(participant)
             ));
