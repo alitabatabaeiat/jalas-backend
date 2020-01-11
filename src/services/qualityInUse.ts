@@ -108,7 +108,7 @@ export default class QualityInUseService {
                 if (/^[0-9]*$/.test(pollCreationTime.column2))
                     return;
                 else
-                    await this.repository.update(pollCreationTime.id, {column2: moment().toISOString})
+                    await this.repository.update(pollCreationTime.id, {column2: moment().toISOString()})
             } else {
                 pollCreationTime = new QualityInUse();
                 pollCreationTime.title = 'pollCreationTime';
@@ -117,6 +117,7 @@ export default class QualityInUseService {
                 return await this.repository.insert(pollCreationTime);
             }
         } catch (ex) {
+            console.log(ex)
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();

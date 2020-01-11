@@ -75,7 +75,7 @@ export default class MeetingTimeService {
         try {
             let meetingTime = await this.repository.findOne({
                 where: {poll: pollId, selected: true},
-                select: ['startsAt', 'endsAt']
+                select: ['startsAt', 'endsAt','id','selected']
             });
             if (meetingTime)
                 return meetingTime;
