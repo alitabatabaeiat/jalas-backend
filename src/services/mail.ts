@@ -94,10 +94,14 @@ export default class MailService {
     }
     public closePollNotificationMail = async (to: any[], pollTitle: string) => {
         to = await NotificationSettingService.isNotificationEnableFor(to, 'closePoll');
-        console.log(`toooo`)
-        console.log(to)
         this.sendMail(to, `close poll '${pollTitle}'`,
             `This poll is closed by the owner`
+        );
+    }
+    public cancelMeetingNotificationMail = async (to: any[], pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'cancelMeeting');
+        this.sendMail(to, `cancel meeting '${pollTitle}'`,
+            `This meeting is canceled by the owner`
         );
     }
 };

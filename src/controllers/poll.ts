@@ -80,6 +80,10 @@ export default class PollController extends Controller {
             method: 'PATCH',
             path: '/:id/close',
             handlers: [authMiddleware, validationMiddleware({ params: idSchema() }), PollController.closePoll]
+        },{
+            method: 'PATCH',
+            path: '/:id/cancel',
+            handlers: [authMiddleware, validationMiddleware({ params: idSchema() }), PollController.cancelMeeting]
         }];
     };
 
@@ -145,5 +149,10 @@ export default class PollController extends Controller {
         const { user, params } = req;
         const response = await PollService.getInstance().closePoll(user, params.id);
         res.send('Poll closed successfully');
+    }
+    private static cancelMeeting = async (req, res) => {
+        const { user, params } = req;
+        const response = await PollService.getInstance().cancelMeeting(user, params.id);
+        res.send('Meeting canceled successfully');
     }
 }
