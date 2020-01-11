@@ -94,7 +94,8 @@ export default class NotificationSettingService {
                     const notificationSetting = await NotificationSettingService.getInstance().getUserNotificationSetting(user);
                     return notificationSetting[settingName] ? user.email : null
                 }));
-                return users.filter(u => u);
+                users = users.filter(u => u);
+                return users.length > 0 ? users : null;
             } else {
                 const notificationSetting = await NotificationSettingService.getInstance().getUserNotificationSetting(users);
                 return notificationSetting[settingName] ? users.email : null
