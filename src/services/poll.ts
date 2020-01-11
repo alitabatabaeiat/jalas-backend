@@ -321,9 +321,7 @@ export default class PollService {
     public cancelMeeting = async (user, pollId: string) => {
         try {
             const poll = await this.repository.findOne({ where: { owner: user, id: pollId }, relations: ['participants'] });
-            console.log(poll.state)
             if (poll && poll.state == 3) {
-                console.log('dfsdf')
                 await this.repository.update(pollId, { state: 200 });
                 await QualityInUseService.getInstance().pollChanged(pollId);
                 MailService.getInstance().cancelMeetingNotificationMail(poll.participants, poll.title);
@@ -342,11 +340,13 @@ export default class PollService {
     
     public addParticipant = async (owner, pollId: string, { user }) => {
         try {
-            const poll = await this.repository.findOne({ where: { owner: owner, id: pollId }, relations: ['participants'] });
-            if(poll && poll.state < 2){
-                console.log(poll.participants)
+            let poll = await this.repository.findOne({ where: { owner: owner, id: pollId },relations: ['participants'] });
+            if(poll && poll.state < 2 && owner.email != user.email){
                 let newUser = await UserService.getInstance().getUser(user.email)
-                console.log(newUser)
+                poll.participants.push(newUser)
+                console.log(poll)
+                await this.repository.save(poll);
+                return poll
             }else if(!poll){
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
             }
@@ -355,7 +355,26 @@ export default class PollService {
                 throw ex;
             throw new HttpException();
         }
-        
+    }
+
+    public removeParticipant = async (owner, pollId: string, { user }) => {
+        try {
+            let poll = await this.repository.findOne({ where: { owner: owner, id: pollId }, relations: ['participants'] });
+            if (poll && poll.state < 2 && owner.email != user.email) {
+                console.log(poll)
+                // console.log(poll.participants.filter(p => p !== user.email))
+                // poll.participants.re
+                // console.log(poll)
+                await this.repository.save(poll);
+                return poll
+            } else if (!poll) {
+                throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
+            }
+        } catch (ex) {
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
     }
 
 }

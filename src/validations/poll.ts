@@ -78,6 +78,12 @@ const addParticipantSchema = Joi.object({
     }).required()
 });
 
+const removeParticipantSchema = Joi.object({
+    user: Joi.object({
+        email: Joi.string().email().required()
+    }).required()
+});
+
 export {
     createPollSchema,
     selectMeetingTime,
@@ -88,5 +94,6 @@ export {
     updateCommentSchema,
     addMeetingTimeSchema,
     removeMeetingTimeSchema,
-    addParticipantSchema
+    addParticipantSchema,
+    removeParticipantSchema
 };
