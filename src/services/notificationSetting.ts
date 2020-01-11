@@ -78,7 +78,7 @@ export default class NotificationSettingService {
     private static setNotificationSetting(notificationSettingInDb, notificationSetting) {
         notificationSettingInDb.createPoll = notificationSetting.createPoll;
         notificationSettingInDb.reserveRoom = notificationSetting.reserveRoom;
-        notificationSettingInDb.chooseMeetingTime = notificationSetting.chooseMeetingTime;
+        notificationSettingInDb.selectMeetingTime = notificationSetting.selectMeetingTime;
         notificationSettingInDb.vote = notificationSetting.vote;
         notificationSettingInDb.addMeetingTime = notificationSetting.addMeetingTime;
         notificationSettingInDb.removeMeetingTime = notificationSetting.removeMeetingTime;
