@@ -20,6 +20,9 @@ export default class MeetingTime extends Base {
     @Column('smallint', {name: 'vote_against', default: 0})
     public voteAgainst: number;
 
+    @Column('smallint', { name: 'vote_abstain', default: 0 })
+    public voteAbstain: number;
+
     @ManyToOne(type => Poll, poll => poll.possibleMeetingTimes, {onDelete: 'CASCADE'})
     public poll: Poll;
 

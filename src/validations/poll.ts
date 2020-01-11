@@ -12,7 +12,7 @@ const rules = {
         selected: Joi.boolean()
     },
     vote: {
-        voteFor: Joi.boolean()
+        voteFor: Joi.number()
     },
     participants: Joi.array().items(Joi.string().email()).min(1)
 };
@@ -72,6 +72,11 @@ const removeMeetingTimeSchema = Joi.object({
         id: commonRules.id.required()
     }).required()
 });
+const addParticipantSchema = Joi.object({
+    user: Joi.object({
+        email: Joi.string().email().required()
+    }).required()
+});
 
 export {
     createPollSchema,
@@ -82,5 +87,6 @@ export {
     removeCommentSchema,
     updateCommentSchema,
     addMeetingTimeSchema,
-    removeMeetingTimeSchema
+    removeMeetingTimeSchema,
+    addParticipantSchema
 };

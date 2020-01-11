@@ -22,7 +22,7 @@ export default class PollRepository extends Repository<Poll> {
     findOneThatUserParticipatesWithRelations(id, userEmail): Promise<Poll | undefined> {
         return this.manager.createQueryBuilder(Poll, 'poll')
             .select(['poll.id', 'poll.title', 'poll.room', 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',
-                'meetingTime.voteFor', 'meetingTime.voteAgainst', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
+                'meetingTime.voteFor', 'meetingTime.voteAgainst','meetingTime.voteAbstain', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
                 'vote.id', 'vote.voteFor', 'voter.id'])
             .leftJoin('poll.owner', 'owner')
             .leftJoin('poll.participants', 'participant')
@@ -38,7 +38,7 @@ export default class PollRepository extends Repository<Poll> {
     findOneThatUserParticipateOnItWithMeetingTimeVote(id, userEmail, meetingTimeId): Promise<Poll | undefined> {
         return this.manager.createQueryBuilder(Poll, 'poll')
             .select(['poll.id', 'poll.title' , 'poll.state', 'owner.id', 'owner.email', 'participant.id', 'participant.email', 'meetingTime.id',
-                'meetingTime.voteFor', 'meetingTime.voteAgainst', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
+                'meetingTime.voteFor', 'meetingTime.voteAgainst','meetingTime.voteAbstain', 'meetingTime.startsAt', 'meetingTime.endsAt', 'meetingTime.selected',
                 'vote.id', 'vote.voteFor', 'voter.id'])
             .leftJoin('poll.owner', 'owner')
             .leftJoin('poll.participants', 'participant', 'participant.email = :userEmail')
