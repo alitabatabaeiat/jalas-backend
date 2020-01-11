@@ -219,7 +219,7 @@ export default class PollService {
                 return voteMeetingTime
             } else if (!poll)
                 throw new ResourceNotFoundException('Poll');
-            else if (poll.state > 0 && poll.state != 100)
+            else if (poll.state > 1 && poll.state != 100 && poll.state != 200)
                 throw new InvalidRequestException('A meeting time has been set for poll');
             else if (poll.state == 100)
                 throw new InvalidRequestException('This poll is closed by the owner');
@@ -321,14 +321,16 @@ export default class PollService {
     public cancelMeeting = async (user, pollId: string) => {
         try {
             const poll = await this.repository.findOne({ where: { owner: user, id: pollId }, relations: ['participants'] });
-            if (poll && (poll.state == 3)) {
+            console.log(poll.state)
+            if (poll && poll.state == 3) {
+                console.log('dfsdf')
                 await this.repository.update(pollId, { state: 200 });
                 await QualityInUseService.getInstance().pollChanged(pollId);
                 MailService.getInstance().cancelMeetingNotificationMail(poll.participants, poll.title);
-                return `Meeting '${poll.id}' canceled successfully`;
+                return `Meeting  canceled successfully`;
             } else if (!poll)
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
-            else if (poll.state < 3)
+            else if (poll.state < 3 || poll.state == 100)
                 throw new InvalidRequestException(`You should set the meeting first`);
         } catch (ex) {
             if (ex instanceof HttpException)
