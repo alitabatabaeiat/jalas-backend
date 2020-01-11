@@ -2,6 +2,7 @@ import express from 'express';
 
 import Controller from './controller';
 import QualityInUseService from "../services/qualityInUse";
+import authMiddleware from "../middlewares/auth";
 
 export default class QualityInUseController extends Controller {
     constructor() {
@@ -12,32 +13,13 @@ export default class QualityInUseController extends Controller {
         this.routerMatches = [{
             method: 'GET',
             path: '/',
-            handlers: [QualityInUseController.reservedRooms]
-        }, 
-        // {
-        //     method: 'GET',
-        //     path: '/changedPolls',
-        //     handlers: [QualityInUseController.changedPolls]
-        // }, {
-        //     method: 'GET',
-        //     path: '/pollAverageCreationTime',
-        //     handlers: [QualityInUseController.pollAverageCreationTime]
-        // }
-    ];
+            handlers: [authMiddleware, QualityInUseController.getFullReport]
+        }];
     };
 
-    private static reservedRooms = async (req: express.Request, res: express.Response) => {
-        const response = await QualityInUseService.getInstance().getNumberOfReservedRooms();
+    private static getFullReport = async (req, res) => {
+        const {user} = req;
+        const response = await QualityInUseService.getInstance().getFullReport(user);
         res.send(response);
     };
-
-    // private static changedPolls = async (req: express.Request, res: express.Response) => {
-    //     const response = await QualityInUseService.getInstance().getNumberOfChangedPolls();
-    //     res.send(response);
-    // };
-
-    // private static pollAverageCreationTime = async (req: express.Request, res: express.Response) => {
-    //     const response = await QualityInUseService.getInstance().getAverageCreationTime();
-    //     res.send(response);
-    // };
 }
