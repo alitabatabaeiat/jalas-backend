@@ -67,6 +67,12 @@ const addMeetingTimeSchema = Joi.object({
     }).required()
 });
 
+const removeMeetingTimeSchema = Joi.object({
+    meetingTime: Joi.object({
+        id: commonRules.id.required()
+    }).required()
+});
+
 export {
     createPollSchema,
     selectMeetingTime,
@@ -75,5 +81,6 @@ export {
     createCommentSchema,
     removeCommentSchema,
     updateCommentSchema,
-    addMeetingTimeSchema
+    addMeetingTimeSchema,
+    removeMeetingTimeSchema
 };

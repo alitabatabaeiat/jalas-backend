@@ -86,5 +86,27 @@ export default class MailService {
             this.sendMail(to, `add new meeting time for '${pollTitle}'`,
                 `A new meeting time added to this meeting by the owner. check it out !!`
             );
-    };
+    }
+    public removeMeetingTimeNotificationMail = async (to: any[], pollTitle: string) => {
+        console.log(to)
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'removeMeetingTime');
+        if (to)
+            this.sendMail(to, `remove meeting time from '${pollTitle}'`,
+                `The meeting time you voted has been deleted.`
+            );
+    }
+    public closePollNotificationMail = async (to: any[], pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'closePoll');
+        if (to)
+            this.sendMail(to, `close poll '${pollTitle}'`,
+                `This poll is closed by the owner`
+            );
+    }
+    public cancelMeetingNotificationMail = async (to: any[], pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'cancelMeeting');
+        if (to)
+            this.sendMail(to, `cancel meeting '${pollTitle}'`,
+                `This meeting is canceled by the owner`
+            );
+    }
 };

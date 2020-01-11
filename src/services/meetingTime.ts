@@ -75,7 +75,7 @@ export default class MeetingTimeService {
         try {
             let meetingTime = await this.repository.findOne({
                 where: {poll: pollId, selected: true},
-                select: ['startsAt', 'endsAt']
+                select: ['startsAt', 'endsAt','id','selected']
             });
             if (meetingTime)
                 return meetingTime;
@@ -122,4 +122,24 @@ export default class MeetingTimeService {
             throw new HttpException();
         }
     }
+
+    //@Transactional()
+    public removeMeetingTime = async (meetingTimeId) =>{
+        try{
+            let meetingTime = await this.repository.findOneThatWithMeetingTimeVote(meetingTimeId)
+            if (meetingTime && !meetingTime.selected){
+                await this.repository.delete(meetingTimeId)
+                return meetingTime
+            } else if (meetingTime.selected){
+                throw new InvalidRequestException('Can not remove selected meetingTime');
+            } else if(!meetingTime){
+                throw new ResourceNotFoundException('There is no meeting time with this id')
+            }
+        }catch(ex){
+            if (ex instanceof HttpException)
+                throw ex;
+            throw new HttpException();
+        }
+    }
+
 }

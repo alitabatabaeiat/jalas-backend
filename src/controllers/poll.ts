@@ -10,7 +10,8 @@ import {
     voteMeetingTime,
     addMeetingTimeSchema,
     removeCommentSchema,
-    updateCommentSchema
+    updateCommentSchema,
+    removeMeetingTimeSchema
 } from "../validations/poll";
 import {idSchema} from "../validations/common";
 
@@ -68,6 +69,21 @@ export default class PollController extends Controller {
                 params: idSchema(),
                 body: addMeetingTimeSchema
             }), PollController.addMeetingTime]
+        },{
+            method: 'DELETE',
+            path: '/:id/meeting-times',
+            handlers: [authMiddleware, validationMiddleware({
+                params: idSchema(),
+                body: removeMeetingTimeSchema
+            }), PollController.removeMeetingTime]
+        },{
+            method: 'PATCH',
+            path: '/:id/close',
+            handlers: [authMiddleware, validationMiddleware({ params: idSchema() }), PollController.closePoll]
+        },{
+            method: 'PATCH',
+            path: '/:id/cancel',
+            handlers: [authMiddleware, validationMiddleware({ params: idSchema() }), PollController.cancelMeeting]
         }];
     };
 
@@ -123,5 +139,20 @@ export default class PollController extends Controller {
         const {user, params, body} = req;
         const response = await PollService.getInstance().addMeetingTime(user, params.id, body);
         res.send(response);
+    }
+    private static removeMeetingTime = async (req, res) => {
+        const { user, params, body } = req;
+        const response = await PollService.getInstance().removeMeetingTime(user, params.id, body);
+        res.send(response);
+    }
+    private static closePoll = async (req, res) => {
+        const { user, params } = req;
+        const response = await PollService.getInstance().closePoll(user, params.id);
+        res.send('Poll closed successfully');
+    }
+    private static cancelMeeting = async (req, res) => {
+        const { user, params } = req;
+        const response = await PollService.getInstance().cancelMeeting(user, params.id);
+        res.send('Meeting canceled successfully');
     }
 }
