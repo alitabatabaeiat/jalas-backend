@@ -361,10 +361,8 @@ export default class PollService {
         try {
             let poll = await this.repository.findOne({ where: { owner: owner, id: pollId }, relations: ['participants'] });
             if (poll && poll.state < 2 && owner.email != user.email) {
-                console.log(poll)
-                // console.log(poll.participants.filter(p => p !== user.email))
-                // poll.participants.re
-                // console.log(poll)
+                poll.participants = _.remove(poll.participants,(p)=> {
+                    return p.email != user.email});
                 await this.repository.save(poll);
                 return poll
             } else if (!poll) {
