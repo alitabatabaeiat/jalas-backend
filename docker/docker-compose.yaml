@@ -1,17 +1,17 @@
 version: "3"
 services:
-  nginx:
+  backend-nginx:
     links:
       - node:node
     container_name: jalas-backend-nginx
     build: ./nginx
     image: jalas-backend-nginx
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - node
 
-  node:
+  backend-node:
     container_name: jalas-backend-node
     build:
       context: ../
