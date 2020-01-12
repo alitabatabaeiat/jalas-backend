@@ -88,7 +88,6 @@ export default class MailService {
             );
     }
     public removeMeetingTimeNotificationMail = async (to: any[], pollTitle: string) => {
-        console.log(to)
         to = await NotificationSettingService.isNotificationEnableFor(to, 'removeMeetingTime');
         if (to)
             this.sendMail(to, `remove meeting time from '${pollTitle}'`,
@@ -109,4 +108,18 @@ export default class MailService {
                 `This meeting is canceled by the owner`
             );
     }
+    public sendAddNewParticipantNotification = async (to: any[],pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'addParticipant');
+        if (to)
+            this.sendMail(to, `Add new participant to Poll For meeting '${pollTitle}'`,
+                `New participant added to this meeting by owner`
+            );
+    };
+    public sendRemoveParticipantNotification = async (to: any[], pollTitle: string) => {
+        to = await NotificationSettingService.isNotificationEnableFor(to, 'addParticipant');
+        if (to)
+            this.sendMail(to, `Remove a participant from Poll For meeting '${pollTitle}'`,
+                `A participant removed from this meeting by owner`
+            );
+    };
 };

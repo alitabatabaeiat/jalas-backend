@@ -200,7 +200,6 @@ export default class PollService {
                 throw new InvalidRequestException('This meeting is canceled');
         } catch (ex) {
             winston.error(ex);
-            console.log(ex)
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
@@ -283,9 +282,8 @@ export default class PollService {
             const poll = await this.repository.findOne({ where: { owner: user, id: pollId }});
             if (poll && poll.state < 2) {
                 let oldMeetingTime = await MeetingTimeService.getInstance().removeMeetingTime(meetingTime.id)
-                //TODO: email bug!!
                 await QualityInUseService.getInstance().pollChanged(pollId);
-                MailService.getInstance().removeMeetingTimeNotificationMail(oldMeetingTime.votes.map(p => p.voter.email), poll.title);
+                MailService.getInstance().removeMeetingTimeNotificationMail(oldMeetingTime.votes.map(p => p.voter), poll.title);
                 return `meeting time '${oldMeetingTime.id}' removed successfully`
             } 
             else if (!poll)
@@ -293,7 +291,6 @@ export default class PollService {
             else if (poll.state == 100)
                 throw new ResourceNotFoundException(`This poll is closed by the owner`);
         } catch (ex) {
-            console.log(ex)
             winston.error(ex);
             if (ex instanceof HttpException)
                 throw ex;
@@ -344,8 +341,8 @@ export default class PollService {
             if(poll && poll.state < 2 && owner.email != user.email){
                 let newUser = await UserService.getInstance().getUser(user.email)
                 poll.participants.push(newUser)
-                console.log(poll)
                 await this.repository.save(poll);
+                MailService.getInstance().sendAddNewParticipantNotification(poll.participants,poll.title)
                 return poll
             }else if(!poll){
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
@@ -364,6 +361,7 @@ export default class PollService {
                 poll.participants = _.remove(poll.participants,(p)=> {
                     return p.email != user.email});
                 await this.repository.save(poll);
+                MailService.getInstance().sendRemoveParticipantNotification(poll.participants,poll.title)
                 return poll
             } else if (!poll) {
                 throw new ResourceNotFoundException(`You don't have any poll with id '${pollId}'`);
