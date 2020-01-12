@@ -130,7 +130,6 @@ export default class MeetingTimeService {
                 meetingTime.votes[0] = await voteService.insertVote(vote);
             return meetingTime;
         } catch (ex) {
-            console.log(ex);
             if (ex instanceof HttpException)
                 throw ex;
             throw new HttpException();
