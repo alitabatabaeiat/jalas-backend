@@ -9,7 +9,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - node
+      - backend-node
 
   backend-node:
     container_name: jalas-backend-node
